@@ -11,7 +11,9 @@ cd ~/dotfiles
 exec zsh
 ```
 
-The install script:
+**New to these tools?** Check out the [Modern CLI Mastery Guide](GUIDE.md) for tips and shortcuts!
+
+## The install script:
 1. Detects your OS (macOS or Ubuntu/Debian)
 2. Installs all tools via Homebrew or apt
 3. Installs Nerd Fonts (MesloLGS, JetBrains Mono, Fira Code)
@@ -31,16 +33,16 @@ Safe to run multiple times (idempotent).
 | Config | Description |
 |--------|-------------|
 | **zsh** | zinit, autosuggestions, syntax highlighting, fzf-tab fuzzy completion, atuin history, mise runtimes |
-| **git** | Delta pager (Catppuccin Mocha), useful aliases, histogram diffs, auto-rebase, rerere, SSH commit signing via 1Password, global hooks (secret/large-file/conflict-marker/whitespace guards, force-push protection) |
-| **starship** | Fast prompt with Catppuccin theme, git status, language versions |
-| **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, Catppuccin Mocha status bar |
-| **neovim** | lazy.nvim, LSP, telescope, treesitter, catppuccin theme |
-| **bat** | Catppuccin Mocha theme, line numbers + change markers |
-| **lazygit** | Catppuccin Mocha theme, delta as the diff pager |
+| **git** | Delta pager (GitHub Dark), useful aliases, histogram diffs, auto-rebase, rerere, SSH commit signing via 1Password, global hooks (secret/large-file/conflict-marker/whitespace guards, force-push protection) |
+| **starship** | Fast prompt with GitHub Dark theme, git status, language versions |
+| **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, GitHub Dark status bar |
+| **neovim** | lazy.nvim, LSP, telescope, treesitter, github-theme (GitHub Dark) |
+| **bat** | GitHub Dark theme, line numbers + change markers |
+| **lazygit** | GitHub Dark theme, delta as the diff pager |
 | **editorconfig** | Consistent formatting across editors |
 | **ripgrep** | Smart defaults for code search |
 
-Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses the same **Catppuccin Mocha** palette for a consistent look end to end.
+Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses the same **GitHub Dark** palette for a consistent look end to end.
 
 ## Tools Installed
 
@@ -48,7 +50,7 @@ Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses t
 
 | Classic | Modern | Purpose |
 |---------|--------|---------|
-| `ls` | [eza](https://github.com/eza-community/eza) | File listing with icons, git status, Catppuccin Mocha colors |
+| `ls` | [eza](https://github.com/eza-community/eza) | File listing with icons, git status, GitHub Dark colors |
 | `cat` | [bat](https://github.com/sharkdp/bat) | Syntax-highlighted file viewing |
 | `grep` | [ripgrep](https://github.com/BurntSushi/ripgrep) | Fast recursive code search |
 | `find` | [fd](https://github.com/sharkdp/fd) | Fast, user-friendly file finding |

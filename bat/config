@@ -1,3 +1,14 @@
---theme="Catppuccin Mocha"
+# bat configuration
+# https://github.com/sharkdp/bat#configuration-file
+
+# Set the theme to "GitHub Dark"
+--theme="GitHub Dark"
+
+# Show line numbers, git status and file header (but no grid)
+--style="numbers,changes,header"
+
+# Use italic text on the terminal (if supported)
 --italic-text=always
---style=numbers,changes,header
+
+# Use C-style comments for coloring (if language is not detected)
+# --map-syntax "*.jenkinsfile:Groovy"

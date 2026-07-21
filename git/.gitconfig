@@ -55,7 +55,9 @@
     navigate = true
     side-by-side = true
     line-numbers = true
-    syntax-theme = "Catppuccin Mocha"
+    syntax-theme = "GitHub Dark"
+    plus-style = "syntax #033a16"
+    minus-style = "syntax #3c1618"
 
 [rerere]
     enabled = true

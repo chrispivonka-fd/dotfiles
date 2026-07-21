@@ -3,29 +3,20 @@
 -- =============================================================================
 
 return {
-    -- Catppuccin theme
+    -- GitHub Dark theme
     {
-        "catppuccin/nvim",
-        name = "catppuccin",
+        "projekt0n/github-nvim-theme",
+        name = "github-theme",
         priority = 1000,
         lazy = false,
         opts = {
-            flavour = "mocha",
-            transparent_background = false,
-            integrations = {
-                cmp = true,
-                gitsigns = true,
-                indent_blankline = { enabled = true },
-                mason = true,
-                neo_tree = true,
-                telescope = { enabled = true },
-                treesitter = true,
-                which_key = true,
+            options = {
+                transparent = false,
             },
         },
         config = function(_, opts)
-            require("catppuccin").setup(opts)
-            vim.cmd.colorscheme("catppuccin")
+            require("github-theme").setup(opts)
+            vim.cmd.colorscheme("github_dark")
         end,
     },
 
@@ -36,16 +27,16 @@ return {
         event = "VeryLazy",
         opts = {
             options = {
-                theme = "catppuccin",
+                theme = "auto",
                 globalstatus = true,
-                component_separators = { left = "|", right = "|" },
+                component_separators = { left = "", right = "" },
                 section_separators = { left = "", right = "" },
             },
             sections = {
-                lualine_a = { "mode" },
-                lualine_b = { "branch", "diff", "diagnostics" },
+                lualine_a = { { "mode", fmt = function(str) return str:sub(1, 1) end } },
+                lualine_b = { "branch" },
                 lualine_c = { { "filename", path = 1 } },
-                lualine_x = { "encoding", "fileformat", "filetype" },
+                lualine_x = { "diagnostics", "filetype" },
                 lualine_y = { "progress" },
                 lualine_z = { "location" },
             },
@@ -84,14 +75,36 @@ return {
         },
     },
 
-    -- Indent guides
+    -- Snacks.nvim: A collection of small QoL plugins (Dashboard, Scroll, etc.)
     {
-        "lukas-reineke/indent-blankline.nvim",
-        main = "ibl",
-        event = { "BufReadPre", "BufNewFile" },
+        "folke/snacks.nvim",
+        priority = 1000,
+        lazy = false,
         opts = {
-            indent = { char = "│" },
-            scope = { enabled = true, show_start = false, show_end = false },
+            dashboard = { enabled = true },
+            indent = { enabled = true },
+            input = { enabled = true },
+            notifier = { enabled = true, timeout = 3000 },
+            scope = { enabled = true },
+            scroll = { enabled = true },
+            statuscolumn = { enabled = true },
+            words = { enabled = true },
+        },
+        keys = {
+            { "<leader>n", function() Snacks.notifier.show_history() end, desc = "Notification History" },
+            { "<leader>un", function() Snacks.notifier.hide() end, desc = "Dismiss All Notifications" },
+        },
+    },
+
+    -- Subtle animations (cursor, scroll, window resize)
+    {
+        "echasnovski/mini.animate",
+        event = "VeryLazy",
+        opts = {
+            cursor = { enable = false },
+            scroll = { enable = true },
+            resize = { enable = true },
+            window = { enable = true },
         },
     },
 
@@ -99,5 +112,58 @@ return {
     {
         "nvim-tree/nvim-web-devicons",
         lazy = true,
+    },
+
+    -- Better diagnostics list
+    {
+        "folke/trouble.nvim",
+        cmd = { "Trouble" },
+        opts = {
+            use_diagnostic_signs = true,
+            modes = {
+                symbols = {
+                    desc = "Symbols",
+                    mode = "lsp_document_symbols",
+                    focus = false,
+                    win = { position = "right", width = 30 },
+                },
+            },
+        },
+        keys = {
+            { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
+            { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics (Trouble)" },
+            { "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", desc = "Symbols (Trouble)" },
+            { "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", desc = "LSP Definitions / references / ... (Trouble)" },
+        },
+    },
+
+    -- Highly experimental UI overhaul (Noice)
+    {
+        "folke/noice.nvim",
+        event = "VeryLazy",
+        opts = {
+            lsp = {
+                override = {
+                    ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+                    ["vim.lsp.util.set_autocmd_lru"] = true,
+                    ["package.loaded['vim.lsp.util'].convert_input_to_markdown_lines"] = true,
+                },
+            },
+            presets = {
+                bottom_search = true,
+                command_palette = true,
+                long_message_to_split = true,
+            },
+            views = {
+                cmdline_popup = {
+                    position = { row = 5, col = "50%" },
+                    size = { width = 60, height = "auto" },
+                },
+            },
+        },
+        dependencies = {
+            "MunifTanjim/nui.nvim",
+            "rcarriga/nvim-notify",
+        },
     },
 }

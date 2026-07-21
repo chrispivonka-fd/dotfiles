@@ -77,14 +77,22 @@ install_packages_macos() {
 
     local packages=(
         neovim tmux starship fzf ripgrep fd bat eza zoxide
-        git-delta lazygit gh gitleaks
+        git-delta lazygit gh gitleaks yazi direnv just lazydocker bottom mise vivid
         tldr jq yq htop ncdu httpie tree shellcheck tokei hyperfine difftastic
-        atuin mise pinentry-mac 1password-cli
-        yazi television bottom
+        atuin pinentry-mac 1password-cli television
+        ruff golangci-lint pnpm fastfetch mods node
+        awscli aws-vault terraform
     )
 
     info "Installing packages via Homebrew..."
     brew install "${packages[@]}" 2>/dev/null || true
+    
+    # Google Cloud SDK (cask)
+    if ! command_exists gcloud; then
+        info "Installing Google Cloud SDK..."
+        brew install --cask google-cloud-sdk 2>/dev/null || true
+    fi
+
     success "Homebrew packages installed"
 
     # Nerd Fonts (needed for icons in starship, neovim, eza, etc.)
@@ -96,6 +104,24 @@ install_packages_macos() {
     info "Installing Nerd Fonts..."
     brew install --cask "${fonts[@]}" 2>/dev/null || true
     success "Nerd Fonts installed"
+
+    # Claude Code (Anthropic CLI)
+    if ! command_exists claude; then
+        info "Installing Claude Code..."
+        npm install -g @anthropic-ai/claude-code 2>/dev/null || true
+    fi
+
+    # Gemini CLI (Google AI CLI)
+    if ! command_exists gemini; then
+        info "Installing Gemini CLI..."
+        npm install -g @google/gemini-cli 2>/dev/null || true
+    fi
+
+    # AWS CDK
+    if ! command_exists cdk; then
+        info "Installing AWS CDK..."
+        npm install -g aws-cdk 2>/dev/null || true
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -108,10 +134,119 @@ install_packages_debian() {
     # Core packages available in default repos
     local apt_packages=(
         neovim tmux fzf ripgrep fd-find bat zoxide git curl wget unzip
-        tldr jq htop ncdu httpie tree shellcheck pinentry-curses gnupg
+        tldr jq yq htop ncdu httpie tree shellcheck pinentry-curses gnupg
+        direnv nodejs npm terraform
     )
     info "Installing core packages via apt..."
     sudo apt-get install -y -qq "${apt_packages[@]}"
+
+    # Just (Task runner)
+    if ! command_exists just; then
+        info "Installing just..."
+        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+    fi
+
+    # Mise (Manager for dev tools/languages)
+    if ! command_exists mise; then
+        info "Installing mise..."
+        curl https://mise.jdx.dev/install.sh | sh
+    fi
+
+    # Ruff (Python linter/formatter)
+    if ! command_exists ruff; then
+        info "Installing ruff..."
+        curl -LsSf https://astral.sh/ruff/install.sh | sh
+    fi
+
+    # Pnpm (Fast Node package manager)
+    if ! command_exists pnpm; then
+        info "Installing pnpm..."
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+    fi
+
+    # Claude Code (Anthropic CLI)
+    if ! command_exists claude; then
+        info "Installing Claude Code..."
+        sudo npm install -g @anthropic-ai/claude-code 2>/dev/null || true
+    fi
+
+    # Gemini CLI (Google AI CLI)
+    if ! command_exists gemini; then
+        info "Installing Gemini CLI..."
+        sudo npm install -g @google/gemini-cli 2>/dev/null || true
+    fi
+
+    # AWS CDK
+    if ! command_exists cdk; then
+        info "Installing AWS CDK..."
+        sudo npm install -g aws-cdk 2>/dev/null || true
+    fi
+
+    # AWS CLI v2
+    if ! command_exists aws; then
+        info "Installing AWS CLI v2..."
+        local arch_aws="x86_64"
+        if [ "$(uname -m)" = "aarch64" ]; then arch_aws="aarch64"; fi
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-${arch_aws}.zip" -o "awscliv2.zip"
+        unzip -q awscliv2.zip
+        sudo ./aws/install --update
+        rm -rf aws awscliv2.zip
+    fi
+
+    # Google Cloud SDK
+    if ! command_exists gcloud; then
+        info "Installing Google Cloud SDK..."
+        curl https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME/.local/share"
+        # The installer adds to .zshrc, but we might want to handle it ourselves
+    fi
+
+    # Golangci-lint
+    if ! command_exists golangci-lint; then
+        info "Installing golangci-lint..."
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin
+    fi
+
+    # Lazydocker
+    if ! command_exists lazydocker; then
+        info "Installing lazydocker..."
+        curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+    fi
+
+    # Vivid (LS_COLORS generator)
+    if ! command_exists vivid; then
+        info "Installing vivid..."
+        local vivid_ver
+        vivid_ver=$(curl -sL https://api.github.com/repos/sharkdp/vivid/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
+        local arch_vivid="amd64"
+        if [ "$(uname -m)" = "aarch64" ]; then arch_vivid="arm64"; fi
+        curl -sLo /tmp/vivid.deb "https://github.com/sharkdp/vivid/releases/download/${vivid_ver}/vivid_${vivid_ver#v}_${arch_vivid}.deb"
+        sudo dpkg -i /tmp/vivid.deb
+        rm -f /tmp/vivid.deb
+    fi
+
+    # Mods (AI for piping)
+    if ! command_exists mods; then
+        info "Installing mods..."
+        local mods_ver
+        mods_ver=$(curl -sL https://api.github.com/repos/charmbracelet/mods/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
+        local arch_mods="amd64"
+        if [ "$(uname -m)" = "aarch64" ]; then arch_mods="arm64"; fi
+        curl -sLo /tmp/mods.deb "https://github.com/charmbracelet/mods/releases/download/${mods_ver}/mods_${mods_ver#v}_${arch_mods}.deb"
+        sudo dpkg -i /tmp/mods.deb
+        rm -f /tmp/mods.deb
+    fi
+
+    # Fastfetch (System info)
+    if ! command_exists fastfetch; then
+        info "Installing fastfetch..."
+        local ff_ver
+        ff_ver=$(curl -sL https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
+        local arch_ff="linux-amd64"
+        if [ "$(uname -m)" = "aarch64" ]; then arch_ff="linux-aarch64"; fi
+        curl -sLo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/download/${ff_ver}/fastfetch-${arch_ff}.deb"
+        sudo dpkg -i /tmp/fastfetch.deb
+        rm -f /tmp/fastfetch.deb
+    fi
 
     # Create compatibility symlinks for Ubuntu's renamed binaries
     mkdir -p "$HOME/.local/bin"
@@ -128,6 +263,20 @@ install_packages_debian() {
     if ! command_exists starship; then
         info "Installing starship..."
         curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
+
+    # Yazi — from GitHub releases
+    if ! command_exists yazi; then
+        info "Installing yazi..."
+        local yazi_ver
+        yazi_ver=$(curl -sL https://api.github.com/repos/sxyazi/yazi/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
+        local arch_yazi="x86_64-unknown-linux-gnu"
+        if [ "$(uname -m)" = "aarch64" ]; then arch_yazi="aarch64-unknown-linux-gnu"; fi
+        curl -sLo /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/download/${yazi_ver}/yazi-${arch_yazi}.zip"
+        unzip -qo /tmp/yazi.zip -d /tmp
+        sudo mv /tmp/yazi-${arch_yazi}/yazi /usr/local/bin/
+        sudo mv /tmp/yazi-${arch_yazi}/ya /usr/local/bin/
+        rm -rf /tmp/yazi.zip /tmp/yazi-${arch_yazi}
     fi
 
     # Eza — from official repo
@@ -388,7 +537,9 @@ setup_zshrc_local() {
 # Add machine-specific exports, PATH entries, API keys, etc.
 
 # Example:
-# export ANTHROPIC_API_KEY="sk-..."
+# export ANTHROPIC_API_KEY="sk-ant-..."
+# export GEMINI_API_KEY="..."
+# export OPENAI_API_KEY="sk-..."
 # export PATH="$HOME/custom/bin:$PATH"
 EOF
 
@@ -432,14 +583,29 @@ create_symlinks() {
     link_file "$DOTFILES_DIR/git/hooks"                 "$HOME/.githooks"
     link_file "$DOTFILES_DIR/bin/tmux-sessionizer"      "$HOME/.local/bin/tmux-sessionizer"
     link_file "$DOTFILES_DIR/bin/op-ssh-sign"           "$HOME/.local/bin/op-ssh-sign"
-    link_file "$DOTFILES_DIR/bat/config"                "$HOME/.config/bat/config"
+    link_file "$DOTFILES_DIR/yazi/yazi.toml"            "$HOME/.config/yazi/yazi.toml"
+    link_file "$DOTFILES_DIR/mise/config.toml"          "$HOME/.config/mise/config.toml"
+    link_file "$DOTFILES_DIR/ghostty/config"            "$HOME/.config/ghostty/config"
 
-    # lazygit's config dir differs by OS
+    link_file "$DOTFILES_DIR/bat/config"                "$HOME/.config/bat/config"
+    mkdir -p "$HOME/.config/bat/themes"
+    link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
+
+    # Rebuild bat theme cache
+    if command_exists bat; then
+        bat cache --build &>/dev/null || true
+    fi
+
+    # lazygit's and VS Code's config dirs differ by OS
     if [ "$OS" = "macos" ]; then
         link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+        local vscode_dir="$HOME/Library/Application Support/Code/User"
     else
         link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+        local vscode_dir="$HOME/.config/Code/User"
     fi
+    mkdir -p "$vscode_dir"
+    link_file "$DOTFILES_DIR/vscode/settings.json" "$vscode_dir/settings.json"
 
     success "All symlinks created"
 }
@@ -491,6 +657,24 @@ install_nvim_plugins() {
     success "Neovim plugins installed"
 }
 
+# -----------------------------------------------------------------------------
+# Install VS Code extensions
+# -----------------------------------------------------------------------------
+install_vscode_extensions() {
+    if ! command_exists code; then
+        warn "VS Code (code) command not found, skipping extension install"
+        return
+    fi
+
+    info "Installing VS Code extensions..."
+    while read -r extension; do
+        if [ -n "$extension" ]; then
+            code --install-extension "$extension" --force &>/dev/null || true
+        fi
+    done < "$DOTFILES_DIR/vscode/extensions.txt"
+    success "VS Code extensions installed"
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -522,7 +706,8 @@ main() {
     install_zinit
     install_tpm
 
-    # Install neovim plugins
+    # Install extensions/plugins
+    install_vscode_extensions
     install_nvim_plugins
 
     echo ""

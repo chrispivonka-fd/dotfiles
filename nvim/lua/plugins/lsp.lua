@@ -19,8 +19,9 @@ return {
         opts = {
             ensure_installed = {
                 "lua_ls",
-                "pyright",
-                "ts_ls",
+                "basedpyright",
+                "ruff",
+                "vtsls",
                 "bashls",
                 "jsonls",
                 "yamlls",
@@ -71,6 +72,7 @@ return {
                     map("<leader>D", vim.lsp.buf.type_definition, "Type definition")
                     map("<leader>ds", vim.lsp.buf.document_symbol, "Document symbols")
                     map("<leader>ws", vim.lsp.buf.workspace_symbol, "Workspace symbols")
+                    map("<leader>cl", vim.lsp.codelens.run, "CodeLens run")
                 end,
             })
 
@@ -95,16 +97,57 @@ return {
                         },
                     },
                 },
-                pyright = {},
-                ts_ls = {},
+                basedpyright = {
+                    settings = {
+                        basedpyright = {
+                            analysis = {
+                                typeCheckingMode = "basic",
+                                autoSearchPaths = true,
+                                useLibraryCodeForTypes = true,
+                            },
+                        },
+                    },
+                },
+                ruff = {},
+                vtsls = {
+                    settings = {
+                        typescript = {
+                            updateImportsOnFileMove = { enabled = "always" },
+                            inlayHints = {
+                                parameterNames = { enabled = "all" },
+                                parameterTypes = { enabled = true },
+                                variableTypes = { enabled = true },
+                                propertyDeclarationTypes = { enabled = true },
+                                functionLikeReturnTypes = { enabled = true },
+                                enumMemberValues = { enabled = true },
+                            },
+                        },
+                    },
+                },
                 bashls = {},
                 jsonls = {},
                 yamlls = {},
                 html = {},
                 cssls = {},
                 dockerls = {},
-                gopls = {},
-                rust_analyzer = {},
+                gopls = {
+                    settings = {
+                        gopls = {
+                            analyses = { unusedparams = true },
+                            staticcheck = true,
+                            gofumpt = true,
+                        },
+                    },
+                },
+                rust_analyzer = {
+                    settings = {
+                        ["rust-analyzer"] = {
+                            checkOnSave = { command = "clippy" },
+                            cargo = { allFeatures = true },
+                            procMacro = { enable = true },
+                        },
+                    },
+                },
             }
 
             for server, config in pairs(servers) do
@@ -112,6 +155,39 @@ return {
                 lspconfig[server].setup(config)
             end
         end,
+    },
+
+    -- Better formatting
+    {
+        "stevearc/conform.nvim",
+        event = { "BufWritePre" },
+        cmd = { "ConformInfo" },
+        keys = {
+            {
+                "<leader>f",
+                function()
+                    require("conform").format({ async = true, lsp_fallback = true })
+                end,
+                mode = "",
+                desc = "Format buffer",
+            },
+        },
+        opts = {
+            formatters_by_ft = {
+                lua = { "stylua" },
+                python = { "ruff_format", "ruff_organize_imports" },
+                javascript = { "prettierd", "prettier", stop_after_first = true },
+                typescript = { "prettierd", "prettier", stop_after_first = true },
+                javascriptreact = { "prettierd", "prettier", stop_after_first = true },
+                typescriptreact = { "prettierd", "prettier", stop_after_first = true },
+                json = { "prettierd", "prettier", stop_after_first = true },
+                yaml = { "prettierd", "prettier", stop_after_first = true },
+                markdown = { "prettierd", "prettier", stop_after_first = true },
+                rust = { "rustfmt" },
+                go = { "goimports", "gofumpt" },
+            },
+            format_on_save = { timeout_ms = 500, lsp_fallback = true },
+        },
     },
 
     -- Autocompletion

@@ -1,0 +1,76 @@
+{
+  // --- Appearance (GitHub Dark) ---
+  "workbench.colorTheme": "GitHub Dark",
+  "workbench.iconTheme": "material-icon-theme",
+
+  // --- Minimalism (Zen Mode by default) ---
+  "editor.minimap.enabled": false,
+  "workbench.activityBar.location": "default",
+  "workbench.statusBar.visible": true,
+  "editor.scrollbar.vertical": "hidden",
+  "editor.scrollbar.horizontal": "hidden",
+  "window.menuBarVisibility": "toggle",
+  "workbench.sideBar.location": "right",
+  "editor.glyphMargin": false,
+  "editor.folding": false,
+  "editor.lineNumbers": "on",
+  "editor.renderLineHighlight": "none",
+  "workbench.layoutControl.enabled": false,
+  "breadcrumbs.enabled": false,
+
+  // --- Typography ---
+  "editor.fontFamily": "'MesloLGS Nerd Font', 'JetBrains Mono', monospace",
+  "editor.fontSize": 14,
+  "editor.fontLigatures": true,
+  "editor.lineHeight": 1.6,
+  "editor.letterSpacing": 0.5,
+
+  // --- Performance & Snappiness ---
+  "editor.cursorBlinking": "solid",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+  "workbench.list.smoothScrolling": true,
+  "editor.multiCursorModifier": "alt",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit",
+  },
+
+  // --- Language Specifics ---
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+  },
+
+  // --- Terminal ---
+  "terminal.integrated.fontFamily": "MesloLGS Nerd Font",
+  "terminal.integrated.fontSize": 13,
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.gpuAcceleration": "on",
+
+  // --- Files & Security ---
+  "files.autoSave": "onFocusChange",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "explorer.confirmDragAndDrop": false,
+  "explorer.confirmDelete": false,
+
+  // --- Extensions ---
+  "extensions.ignoreRecommendations": true,
+  "projectManager.git.baseFolders": ["~//GitHub"],
+  "workbench.startupEditor": "none",
+}

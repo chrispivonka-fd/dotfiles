@@ -103,6 +103,12 @@ fi
 # gitleaks — manual scan of the working tree (the same check the hooks run)
 command -v gitleaks &>/dev/null && alias leakscan='gitleaks detect --no-git --source . -v'
 
+# lazydocker
+command -v lazydocker &>/dev/null && alias ld='lazydocker'
+
+# yazi
+command -v yazi &>/dev/null && alias yz='yazi'
+
 # --- Docker aliases ----------------------------------------------------------
 alias d='docker'
 alias dc='docker compose'
@@ -122,12 +128,32 @@ alias dvol='docker volume ls'
 # --- Dev tools ---------------------------------------------------------------
 if command -v btm &>/dev/null; then
     alias top='btm'
+    alias btm='btm --basic'
 elif command -v htop &>/dev/null; then
     alias top='htop'
 fi
 command -v ncdu &>/dev/null && alias du='ncdu --color dark'
 command -v http &>/dev/null && alias https='http --default-scheme=https'
 command -v difft &>/dev/null && alias ddiff='difft'
+command -v just &>/dev/null && alias j='just'
+
+# --- Rust --------------------------------------------------------------------
+alias c='cargo'
+alias cb='cargo build'
+alias cr='cargo run'
+alias ct='cargo test'
+alias cn='cargo nextest run'
+alias cw='cargo watch'
+alias ce='cargo expand'
+alias cl='cargo clippy'
+
+# --- Go ----------------------------------------------------------------------
+alias g='go'
+alias gr='go run'
+alias gt='go test ./...'
+alias gb='go build'
+alias gi='go install'
+alias gmt='go mod tidy'
 
 # tmux-sessionizer — usable outside tmux too (starts a session and attaches)
 command -v tmux-sessionizer &>/dev/null && alias ts='tmux-sessionizer'
@@ -155,17 +181,25 @@ fi
 # --- Python ------------------------------------------------------------------
 alias py='python3'
 alias pip='pip3'
+alias r='ruff'
+alias rf='ruff format'
+alias rc='ruff check'
+alias ra='ruff check --fix'
 alias venv='python3 -m venv'
 alias activate='source .venv/bin/activate 2>/dev/null || source venv/bin/activate 2>/dev/null || echo "No venv found"'
 alias pipreq='pip freeze > requirements.txt'
 
-# --- Node/JS -----------------------------------------------------------------
+# --- Node/TypeScript ---------------------------------------------------------
+alias n='npm'
 alias ni='npm install'
 alias nr='npm run'
 alias nrd='npm run dev'
 alias nrb='npm run build'
 alias nrt='npm run test'
 alias nrl='npm run lint'
+alias p='pnpm'
+alias px='pnpx'
+alias tsc='npx tsc'
 
 # --- Network & debugging -----------------------------------------------------
 alias myip='curl -s ifconfig.me'
@@ -183,6 +217,11 @@ alias sizeof='du -sh'
 alias count='find . -type f | wc -l'
 alias ext='find . -type f | sed "s/.*\.//" | sort | uniq -c | sort -rn | head -20'
 
+# --- AI Aliases --------------------------------------------------------------
+if command -v mods &>/dev/null; then
+    alias ai='mods'
+fi
+
 # --- Common utilities --------------------------------------------------------
 alias path='echo $PATH | tr ":" "\n"'
 alias reload='source ~/.zshrc'
@@ -190,7 +229,7 @@ alias cls='clear'
 alias c='clear'
 alias h='history'
 alias hg='history | command grep'
-alias j='jobs -l'
+alias jl='jobs -l'
 alias weather='curl -s "wttr.in?format=3"'
 alias week='date +%V'
 alias timestamp='date +%s'
@@ -200,6 +239,22 @@ alias json='jq .'
 alias uuid='python3 -c "import uuid; print(uuid.uuid4())"'
 alias serve='python3 -m http.server 8000'
 alias sha256='shasum -a 256'
+
+# --- Cloud (AWS & GCloud) ----------------------------------------------------
+if command -v aws &>/dev/null; then
+    alias awsl='aws-vault exec'
+    alias awsls='aws-vault list'
+    alias aws-who='aws sts get-caller-identity'
+    alias s3ls='aws s3 ls'
+fi
+
+if command -v gcloud &>/dev/null; then
+    alias gcp='gcloud'
+    alias gcpl='gcloud auth login'
+    alias gcpp='gcloud config set project'
+    alias gcps='gcloud config set project'
+    alias gcp-who='gcloud config get-value account'
+fi
 
 # --- Process management ------------------------------------------------------
 alias psg='ps aux | command grep -v grep | command grep'

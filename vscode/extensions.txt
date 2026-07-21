@@ -1,0 +1,15 @@
+github.github-vscode-theme
+charliermarsh.ruff
+rust-lang.rust-analyzer
+golang.go
+esbenp.prettier-vscode
+dbaeumer.vscode-eslint
+pkief.material-icon-theme
+usernamehw.errorlens
+christian-kohler.path-intellisense
+formulahendry.auto-rename-tag
+ms-azuretools.vscode-docker
+mechatroner.rainbow-csv
+tamasfe.even-better-toml
+redhat.vscode-yaml
+sumneko.lua

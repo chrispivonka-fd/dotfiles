@@ -18,6 +18,12 @@ export VISUAL="nvim"
 export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
+# Set LS_COLORS using vivid (no built-in GitHub Dark theme; one-dark is the closest
+# bundled match — eza's exact GitHub Dark colors below take precedence for `ls`/`ll`/etc.)
+if command -v vivid &>/dev/null; then
+    export LS_COLORS="$(vivid generate one-dark)"
+fi
+
 # --- Homebrew (macOS) --------------------------------------------------------
 if [ -f /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -50,34 +56,22 @@ setopt NO_BEEP                   # silence
 
 # --- Zinit plugin manager ----------------------------------------------------
 ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
-if [ -d "$ZINIT_HOME" ]; then
-    source "${ZINIT_HOME}/zinit.zsh"
-
-    # Completion definitions must load before compinit runs
-    zinit light zsh-users/zsh-completions
-else
-    echo "[dotfiles] zinit not found. Run install.sh to set up plugins."
+if [ ! -d "$ZINIT_HOME" ]; then
+    mkdir -p "$(dirname "$ZINIT_HOME")"
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
+source "${ZINIT_HOME}/zinit.zsh"
 
-# --- Completion system -------------------------------------------------------
-autoload -Uz compinit
-# Only regenerate dump once per day
-if [ -z "$ZSH_COMPDUMP" ]; then
-    ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump"
-fi
-if [ "$(find "$ZSH_COMPDUMP" -mtime +1 2>/dev/null)" ] || [ ! -f "$ZSH_COMPDUMP" ]; then
-    compinit -d "$ZSH_COMPDUMP"
-else
-    compinit -C -d "$ZSH_COMPDUMP"
-fi
+# Completion definitions must load before compinit runs
+zinit light zsh-users/zsh-completions
 
-zstyle ':completion:*' menu select                                    # arrow key menu
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'           # case-insensitive
-zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"              # colored completions
-zstyle ':completion:*' group-name ''                                  # group by category
-zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'    # category headers
-zstyle ':completion:*' squeeze-slashes true
-zstyle ':completion:*' complete-options true
+# --- Zinit: Load OMZ essentials (snippets) -----------------------------------
+zinit snippet OMZ::lib/completion.zsh
+zinit snippet OMZ::lib/history.zsh
+zinit snippet OMZ::lib/key-bindings.zsh
+
+# --- Zinit: Defer non-critical plugins for snappy startup --------------------
+zinit light romkatv/zsh-defer
 
 # fzf-tab: fuzzy tab-completion menu (must load before autosuggestions/syntax-highlighting)
 if [ -d "$ZINIT_HOME" ]; then
@@ -93,25 +87,51 @@ fi
 # Replay completions from zinit plugins
 command -v zinit &>/dev/null && zinit cdreplay -q
 
-# --- Key bindings ------------------------------------------------------------
-bindkey -e                                    # emacs mode (standard terminal)
-bindkey '^[[A' history-search-backward        # up arrow: history search
-bindkey '^[[B' history-search-forward         # down arrow: history search
-bindkey '^[[3~' delete-char                   # delete key
-bindkey '^[[H' beginning-of-line              # home key
-bindkey '^[[F' end-of-line                    # end key
-bindkey '^[b' backward-word                   # alt-left
-bindkey '^[f' forward-word                    # alt-right
+zinit wait"0" lucid for \
+    atinit"zicompinit; zicdreplay" \
+        zsh-users/zsh-completions \
+    blockf \
+        zsh-users/zsh-autosuggestions \
+    atload"!_zsh_autosuggest_start" \
+        zsh-users/zsh-history-substring-search \
+    Aloxaf/fzf-tab \
+    zdharma-continuum/fast-syntax-highlighting
+
+# --- Completion system settings (after zinit) -------------------------------
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*:descriptions' format '[%d]'
+
+# Disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# Set descriptions format to enable group support
+zstyle ':completion:*:descriptions' format '[%d]'
+# Set list-colors to enable filename colorizing
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# Preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# Switch group using `<` and `>`
+zstyle ':fzf-tab:*' switch-group '<' '>'
+
+# --- Key bindings (substring search) -----------------------------------------
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+# Support for zsh-history-substring-search
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+bindkey -M vicmd 'k' history-substring-search-up
+bindkey -M vicmd 'j' history-substring-search-down
 
 # --- FZF integration ---------------------------------------------------------
 if command -v fzf &>/dev/null; then
-    # Catppuccin Mocha — https://github.com/catppuccin/fzf
+    # GitHub Dark — https://github.com/primer
     export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --info=inline \
---color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
---color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
---color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
---color=selected-bg:#45475a \
---color=border:#313244,label:#cdd6f4"
+--color=bg+:#161b22,bg:#0d1117,spinner:#ffa198,hl:#ff7b72 \
+--color=fg:#e6edf3,header:#ff7b72,info:#bc8cff,pointer:#ffa198 \
+--color=marker:#58a6ff,fg+:#e6edf3,prompt:#bc8cff,hl+:#ff7b72 \
+--color=selected-bg:#21262d \
+--color=border:#161b22,label:#e6edf3"
 
     # Use fd for file finding if available
     if command -v fd &>/dev/null; then
@@ -136,12 +156,12 @@ if command -v fzf &>/dev/null; then
     fi
 fi
 
-# --- Eza colors (Catppuccin Mocha) -------------------------------------------
+# --- Eza colors (GitHub Dark) -------------------------------------------------
 if command -v eza &>/dev/null; then
-    export EZA_COLORS="di=38;2;137;180;250:ex=38;2;166;227;161:ln=38;2;148;226;213:\
-pi=38;2;249;226;175:so=38;2;203;166;247:bd=38;2;250;179;135:cd=38;2;250;179;135:\
-or=38;2;243;139;168:uu=38;2;166;227;161:un=38;2;243;139;168:gu=38;2;166;227;161:\
-gn=38;2;243;139;168:da=38;2;137;220;235"
+    export EZA_COLORS="di=38;2;88;166;255:ex=38;2;63;185;80:ln=38;2;118;227;234:\
+pi=38;2;210;153;34:so=38;2;188;140;255:bd=38;2;255;166;87:cd=38;2;255;166;87:\
+or=38;2;255;123;114:uu=38;2;63;185;80:un=38;2;255;123;114:gu=38;2;63;185;80:\
+gn=38;2;255;123;114:da=38;2;118;227;234"
 fi
 
 # --- Zoxide (smarter cd) ----------------------------------------------------
@@ -152,6 +172,19 @@ command -v atuin &>/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
 
 # --- Mise (per-project runtime version manager) ------------------------------
 command -v mise &>/dev/null && eval "$(mise activate zsh)"
+
+# --- Direnv (Project environment variables) ----------------------------------
+command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+
+# --- Yazi (Terminal File Manager) -------------------------------------------
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
 
 # --- Ripgrep config ----------------------------------------------------------
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
@@ -164,3 +197,18 @@ command -v starship &>/dev/null && eval "$(starship init zsh)"
 
 # --- Local overrides (not tracked in git) ------------------------------------
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+
+# --- Terminal Greeting -------------------------------------------------------
+if [[ $- == *i* ]] && command -v fastfetch &>/dev/null; then
+    fastfetch --config examples/13.jsonc --logo none # Very minimal text-only overview
+fi
+
+# Added by Antigravity
+export PATH="/Users/chris/.antigravity/antigravity/bin:$PATH"
+
+# Added by Antigravity IDE
+export PATH="/Users/chris/.antigravity-ide/antigravity-ide/bin:$PATH"
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/chris/.local/bin:$PATH"

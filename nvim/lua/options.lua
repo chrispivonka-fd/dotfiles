@@ -24,13 +24,13 @@ opt.incsearch = true
 -- UI
 opt.termguicolors = true
 opt.signcolumn = "yes"
-opt.cursorline = true
+opt.cursorline = false      -- minimalist: remove line highlight
 opt.scrolloff = 8
 opt.sidescrolloff = 8
-opt.colorcolumn = "100"
-opt.showmode = false        -- shown by lualine instead
-opt.pumheight = 10          -- completion menu height
-opt.cmdheight = 1
+opt.colorcolumn = ""        -- minimalist: hide color column
+opt.showmode = false
+opt.pumheight = 10
+opt.cmdheight = 0           -- minimalist: hide command line when not used
 
 -- Splits
 opt.splitright = true
