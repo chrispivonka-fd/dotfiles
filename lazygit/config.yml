@@ -1,26 +1,28 @@
-# Catppuccin Mocha theme — https://github.com/catppuccin/lazygit
+# GitHub Dark theme — https://github.com/projekt0n/github-nvim-theme
 gui:
   nerdFontsVersion: "3"
   theme:
     activeBorderColor:
-      - "#b4befe"
+      - "#58a6ff"
       - bold
     inactiveBorderColor:
-      - "#a6adc8"
+      - "#8b949e"
     optionsTextColor:
-      - "#89b4fa"
+      - "#79c0ff"
     selectedLineBgColor:
-      - "#313244"
+      - "#161b22"
     cherryPickedCommitBgColor:
-      - "#94e2d5"
+      - "#39c5cf"
     cherryPickedCommitFgColor:
-      - "#89b4fa"
+      - "#58a6ff"
     unstagedChangesColor:
-      - "#f38ba8"
+      - "#ff7b72"
     defaultFgColor:
-      - "#cdd6f4"
+      - "#e6edf3"
     searchingActiveBorderColor:
-      - "#f9e2af"
+      - "#d29922"
+os:
+  editPreset: nvim
 git:
   paging:
     colorArg: always

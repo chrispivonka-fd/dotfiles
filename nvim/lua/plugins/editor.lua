@@ -1,41 +1,10 @@
 -- =============================================================================
--- Editor utilities: file explorer, autopairs, comments, which-key, etc.
+-- Editor utilities: autopairs, which-key, flash, etc.
+-- Note: comment toggling (gcc/gc) is native in Neovim 0.10+ via vim.comment
+-- File explorer: snacks.nvim's built-in explorer, see plugins/snacks.lua
 -- =============================================================================
 
 return {
-    -- File explorer
-    {
-        "nvim-neo-tree/neo-tree.nvim",
-        branch = "v3.x",
-        dependencies = {
-            "nvim-lua/plenary.nvim",
-            "nvim-tree/nvim-web-devicons",
-            "MunifTanjim/nui.nvim",
-        },
-        keys = {
-            { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle file explorer" },
-            { "<leader>E", "<cmd>Neotree reveal<cr>", desc = "Reveal current file" },
-        },
-        opts = {
-            close_if_last_window = true,
-            filesystem = {
-                follow_current_file = { enabled = true },
-                use_libuv_file_watcher = true,
-                filtered_items = {
-                    hide_dotfiles = false,
-                    hide_gitignored = true,
-                    hide_by_name = { ".git", "node_modules", ".DS_Store" },
-                },
-            },
-            window = {
-                width = 35,
-                mappings = {
-                    ["<space>"] = "none",
-                },
-            },
-        },
-    },
-
     -- Auto pairs
     {
         "windwp/nvim-autopairs",
@@ -43,14 +12,13 @@ return {
         config = true,
     },
 
-    -- Comments (gcc to toggle)
+    -- Better escape (jk to exit insert mode, without blocking on timeoutlen)
     {
-        "numToStr/Comment.nvim",
-        keys = {
-            { "gcc", mode = "n", desc = "Toggle comment" },
-            { "gc",  mode = "v", desc = "Toggle comment" },
+        "max397574/better-escape.nvim",
+        event = "InsertEnter",
+        opts = {
+            timeout = 200,
         },
-        config = true,
     },
 
     -- Which-key (shows available keymaps)
@@ -65,6 +33,7 @@ return {
                 { "<leader>c", group = "Code" },
                 { "<leader>r", group = "Rename" },
                 { "<leader>t", group = "Toggle" },
+                { "<leader>g", group = "Git" },
             },
         },
     },
@@ -83,12 +52,33 @@ return {
         config = true,
     },
 
-    -- Better escape (jk to exit insert mode)
+    -- Flash: fast cursor jump with s/S (replaces leap/hop)
     {
-        "max397574/better-escape.nvim",
-        event = "InsertEnter",
+        "folke/flash.nvim",
+        event = "VeryLazy",
         opts = {
-            timeout = 200,
+            modes = {
+                search = { enabled = false }, -- don't hijack / search
+                char = { enabled = true },    -- enhance f/t/F/T
+            },
+        },
+        keys = {
+            { "s",     function() require("flash").jump() end,              mode = { "n", "x", "o" }, desc = "Flash jump" },
+            { "S",     function() require("flash").treesitter() end,        mode = { "n", "x", "o" }, desc = "Flash treesitter" },
+            { "r",     function() require("flash").remote() end,            mode = "o",               desc = "Remote flash" },
+            { "R",     function() require("flash").treesitter_search() end, mode = { "o", "x" },      desc = "Treesitter search" },
+            { "<C-s>", function() require("flash").toggle() end,            mode = "c",               desc = "Toggle flash search" },
+        },
+    },
+
+    -- lazydev: faster Lua LSP for Neovim config/plugin development
+    {
+        "folke/lazydev.nvim",
+        ft = "lua",
+        opts = {
+            library = {
+                { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+            },
         },
     },
 
@@ -99,7 +89,7 @@ return {
         event = { "BufReadPre", "BufNewFile" },
         opts = {},
         keys = {
-            { "<leader>ft", "<cmd>TodoTelescope<cr>", desc = "Find TODOs" },
+            { "<leader>ft", function() Snacks.picker.todo_comments() end, desc = "Find TODOs" },
         },
     },
 }

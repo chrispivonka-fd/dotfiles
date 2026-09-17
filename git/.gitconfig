@@ -55,7 +55,7 @@
     navigate = true
     side-by-side = true
     line-numbers = true
-    syntax-theme = "Catppuccin Mocha"
+    syntax-theme = "GitHub"
 
 [rerere]
     enabled = true
@@ -90,3 +90,7 @@
 [gpg "ssh"]
 	program = op-ssh-sign
 	allowedSignersFile = ~/.ssh/allowed_signers
+
+[maintenance]
+    auto = true
+    strategy = incremental

@@ -1,42 +1,36 @@
 -- =============================================================================
--- UI: theme, statusline, git signs, indent guides
+-- UI: theme, statusline, git signs
+-- Indent guides are handled by snacks.nvim (see snacks.lua)
 -- =============================================================================
 
 return {
-    -- Catppuccin theme
+    -- GitHub Dark theme
     {
-        "catppuccin/nvim",
-        name = "catppuccin",
+        "projekt0n/github-nvim-theme",
+        name = "github-nvim-theme",
         priority = 1000,
         lazy = false,
-        opts = {
-            flavour = "mocha",
-            transparent_background = false,
-            integrations = {
-                cmp = true,
-                gitsigns = true,
-                indent_blankline = { enabled = true },
-                mason = true,
-                neo_tree = true,
-                telescope = { enabled = true },
-                treesitter = true,
-                which_key = true,
-            },
-        },
-        config = function(_, opts)
-            require("catppuccin").setup(opts)
-            vim.cmd.colorscheme("catppuccin")
+        config = function()
+            require("github-theme").setup({
+                options = {
+                    transparent = false,
+                    styles = {
+                        comments = "italic",
+                        keywords = "bold",
+                    },
+                },
+            })
+            vim.cmd.colorscheme("github_dark_default")
         end,
     },
 
     -- Statusline
     {
         "nvim-lualine/lualine.nvim",
-        dependencies = { "nvim-tree/nvim-web-devicons" },
         event = "VeryLazy",
         opts = {
             options = {
-                theme = "catppuccin",
+                theme = "auto",
                 globalstatus = true,
                 component_separators = { left = "|", right = "|" },
                 section_separators = { left = "", right = "" },
@@ -84,20 +78,20 @@ return {
         },
     },
 
-    -- Indent guides
+    -- mini.icons — actively maintained replacement for nvim-web-devicons
     {
-        "lukas-reineke/indent-blankline.nvim",
-        main = "ibl",
-        event = { "BufReadPre", "BufNewFile" },
-        opts = {
-            indent = { char = "│" },
-            scope = { enabled = true, show_start = false, show_end = false },
-        },
-    },
-
-    -- Icons (dependency for many plugins)
-    {
-        "nvim-tree/nvim-web-devicons",
+        "echasnovski/mini.icons",
         lazy = true,
+        opts = {
+            style = "glyph",
+        },
+        init = function()
+            -- Provide nvim-web-devicons compatibility shim so plugins that
+            -- require("nvim-web-devicons") work without a separate install
+            package.preload["nvim-web-devicons"] = function()
+                require("mini.icons").mock_nvim_web_devicons()
+                return package.loaded["nvim-web-devicons"]
+            end
+        end,
     },
 }
