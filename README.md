@@ -73,15 +73,11 @@ Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses t
 | [tldr](https://tldr.sh/) | Simplified man pages | `tldr tar` |
 | [tree](https://linux.die.net/man/1/tree) | Directory tree view | `tree -L 2` |
 | [shellcheck](https://www.shellcheck.net/) | Shell script linter | `shellcheck script.sh` |
-| [tokei](https://github.com/XAMPPRocky/tokei) | Code statistics | `tokei` in any repo |
-| [hyperfine](https://github.com/sharkdp/hyperfine) | Command benchmarking | `hyperfine 'cmd1' 'cmd2'` |
-| [difftastic](https://difftastic.wilfred.me.uk/) | Syntax-aware structural diffs | `difft file1 file2` |
 | [gh](https://cli.github.com/) | GitHub CLI | `gh pr create` |
 | [mise](https://mise.jdx.dev/) | Per-project runtime version manager | `mise use node@22` |
 | [gitleaks](https://github.com/gitleaks/gitleaks) | Secret scanner, wired into global pre-commit + pre-push hooks | Blocks commits/pushes containing keys/tokens |
 | [1Password CLI](https://developer.1password.com/docs/cli/) | SSH agent + secrets from the terminal | `op signin` |
 | [yazi](https://github.com/sxyazi/yazi) | Terminal file manager with image previews | `y` (cd's your shell to wherever you exit) |
-| [television](https://github.com/alexpasmantier/television) | Fast fuzzy finder — installed but not wired into aliases; fzf already covers this and is more stable for ad-hoc piping | `tv files` |
 | [bottom](https://github.com/ClementTsang/bottom) | Modern graphing process viewer | `top` (aliased, replaces htop) |
 
 ---
@@ -217,33 +213,17 @@ bb        bun run build
 
 #### AWS
 ```
-awsp      Switch AWS profile interactively (fzf)
-awsl      aws sso login
-awsw      aws sts get-caller-identity (who am I?)
+awsp        Switch AWS profile interactively (fzf)
+awsl        aws-vault exec (this machine's workflow)
+awsls       aws-vault list
+awssso      aws sso login
+awsprofiles aws configure list-profiles
+awsw        aws sts get-caller-identity (who am I?)
+awsregion   Show current AWS_DEFAULT_REGION
 awsprofile  Show current profile
-awsls     List configured profiles
-awsec2    List EC2 instances (table view)
-awss3     aws s3 ls
-awslogs   aws logs tail --follow <group>
-```
-
-#### Kubernetes
-```
-k         kubectl
-kgp       kubectl get pods
-kgpa      kubectl get pods -A (all namespaces)
-kgs       kubectl get services
-kgn       kubectl get nodes
-kgd       kubectl get deployments
-kaf       kubectl apply -f
-kdf       kubectl delete -f
-kdp       kubectl describe pod
-kl        kubectl logs -f
-kex       kubectl exec -it
-kctx      kubectl config use-context
-kns       kubectl config set-context --current --namespace
-kctxls    kubectl config get-contexts
-k9        k9s (terminal UI)
+awsec2      List EC2 instances (table view)
+awss3       aws s3 ls
+awslogs     aws logs tail --follow <group>
 ```
 
 #### Networking
@@ -459,7 +439,7 @@ mv        Prompts before overwrite (mv -i)
 |-----|--------|
 | `<leader>tt` | Toggle floating terminal |
 | `<leader>tz` | Toggle zen mode |
-| `<leader>cf` | Format buffer (`conform.nvim`) |
+| `<leader>f` | Format buffer (`conform.nvim`) |
 
 #### Editing
 | Key | Action |
@@ -471,7 +451,6 @@ mv        Prompts before overwrite (mv -i)
 | `cs{old}{new}` | Change surround |
 | `<` / `>` (visual) | Indent (keeps selection) |
 | `Alt+j` / `Alt+k` | Move line up/down |
-| `Ctrl+Space` | Treesitter incremental select |
 | `jk` | Exit insert mode |
 
 #### Text Objects (Treesitter)
@@ -543,13 +522,6 @@ fd -t d                               # Directories only
 fd -t f -x chmod 644                  # Execute on results
 fd -H pattern                         # Include hidden files
 fd pattern /path                      # Search specific path
-```
-
-#### hyperfine
-```bash
-hyperfine 'command1' 'command2'       # Compare two commands
-hyperfine --warmup 3 'command'        # With warmup runs
-hyperfine -N 'fast command'           # Disable shell wrapping
 ```
 
 #### tldr

@@ -197,11 +197,6 @@ command -v starship &>/dev/null && eval "$(starship init zsh)"
 # --- Local overrides (not tracked in git) ------------------------------------
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 
-# --- Terminal Greeting -------------------------------------------------------
-if [[ $- == *i* ]] && command -v fastfetch &>/dev/null; then
-    fastfetch --config examples/13.jsonc --logo none # Very minimal text-only overview
-fi
-
 # Added by Antigravity
 export PATH="/Users/chris/.antigravity/antigravity/bin:$PATH"
 

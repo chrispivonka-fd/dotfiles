@@ -10,6 +10,13 @@ python = "3.13"
 node = "lts"
 go = "latest"
 
+# Package managers/runtimes for the above — mise-managed so there's one
+# consistent, checksum-verified path instead of each having its own
+# official curl-installer script per OS
+pnpm = "latest"
+bun = "latest"
+uv = "latest"
+
 # CLI tools — mise's aqua backend installs these with checksum verification,
 # one consistent path on both macOS and Linux (replaces per-OS package lists
 # and hand-rolled GitHub-release curl installers)
@@ -17,12 +24,9 @@ delta = "latest"
 lazygit = "latest"
 lazydocker = "latest"
 yq = "latest"
-hyperfine = "latest"
-difftastic = "latest"
 gitleaks = "latest"
 tree-sitter = "latest"
 yazi = "latest"
-television = "latest"
 bottom = "latest"
 atuin = "latest"
 vivid = "latest"

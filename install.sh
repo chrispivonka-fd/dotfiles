@@ -78,9 +78,9 @@ install_packages_macos() {
     local packages=(
         neovim tmux starship fzf ripgrep fd bat eza zoxide
         gh git-lfs direnv just mise
-        tldr jq htop ncdu httpie tree shellcheck tokei
+        tldr jq htop ncdu httpie tree shellcheck
         pinentry-mac 1password-cli
-        ruff golangci-lint pnpm fastfetch mods node bun uv
+        ruff golangci-lint node
         awscli aws-vault terraform
     )
 
@@ -95,11 +95,10 @@ install_packages_macos() {
 
     success "Homebrew packages installed"
 
-    # delta, lazygit, lazydocker, yq, hyperfine, difftastic, gitleaks,
-    # tree-sitter, yazi, television, bottom are installed later via mise
-    # (see install_mise_tools) for one consistent, checksum-verified path
-    # across both macOS and Linux — see mise/config.toml. tokei has no
-    # prebuilt-binary mise backend (cargo-only), so it stays a brew formula.
+    # delta, lazygit, lazydocker, yq, gitleaks, tree-sitter, yazi, bottom,
+    # atuin, vivid are installed later via mise (see install_mise_tools) for
+    # one consistent, checksum-verified path across both macOS and Linux —
+    # see mise/config.toml.
 
     # Nerd Fonts (needed for icons in starship, neovim, eza, etc.)
     local fonts=(
@@ -164,12 +163,6 @@ install_packages_debian() {
         curl -LsSf https://astral.sh/ruff/install.sh | sh
     fi
 
-    # Pnpm (Fast Node package manager)
-    if ! command_exists pnpm; then
-        info "Installing pnpm..."
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-    fi
-
     # Claude Code (Anthropic CLI)
     if ! command_exists claude; then
         info "Installing Claude Code..."
@@ -212,30 +205,6 @@ install_packages_debian() {
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin
     fi
 
-    # Mods (AI for piping)
-    if ! command_exists mods; then
-        info "Installing mods..."
-        local mods_ver
-        mods_ver=$(curl -sL https://api.github.com/repos/charmbracelet/mods/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
-        local arch_mods="amd64"
-        if [ "$(uname -m)" = "aarch64" ]; then arch_mods="arm64"; fi
-        curl -sLo /tmp/mods.deb "https://github.com/charmbracelet/mods/releases/download/${mods_ver}/mods_${mods_ver#v}_${arch_mods}.deb"
-        sudo dpkg -i /tmp/mods.deb
-        rm -f /tmp/mods.deb
-    fi
-
-    # Fastfetch (System info)
-    if ! command_exists fastfetch; then
-        info "Installing fastfetch..."
-        local ff_ver
-        ff_ver=$(curl -sL https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
-        local arch_ff="linux-amd64"
-        if [ "$(uname -m)" = "aarch64" ]; then arch_ff="linux-aarch64"; fi
-        curl -sLo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/download/${ff_ver}/fastfetch-${arch_ff}.deb"
-        sudo dpkg -i /tmp/fastfetch.deb
-        rm -f /tmp/fastfetch.deb
-    fi
-
     # Create compatibility symlinks for Ubuntu's renamed binaries
     mkdir -p "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH" # so mise (installed below) is found later in this script
@@ -264,24 +233,10 @@ install_packages_debian() {
         sudo apt-get install -y -qq eza
     fi
 
-    # delta, lazygit, lazydocker, yq, hyperfine, difftastic, gitleaks,
-    # tree-sitter, yazi, television, bottom are installed later via mise
-    # (see install_mise_tools) — mise's aqua backend checksum-verifies these
-    # GitHub releases instead of the hand-rolled curl+API pattern used here.
-    # tokei has no prebuilt-binary mise backend (cargo-only), so it stays here.
-
-    # tokei — from GitHub releases
-    if ! command_exists tokei; then
-        info "Installing tokei..."
-        local arch_tokei="x86_64"
-        if [ "$(uname -m)" = "aarch64" ]; then arch_tokei="aarch64"; fi
-        local tokei_ver
-        tokei_ver=$(curl -sL https://api.github.com/repos/XAMPPRocky/tokei/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
-        curl -sLo /tmp/tokei.tar.gz "https://github.com/XAMPPRocky/tokei/releases/download/${tokei_ver}/tokei-${arch_tokei}-unknown-linux-gnu.tar.gz"
-        tar xzf /tmp/tokei.tar.gz -C /tmp tokei
-        sudo mv /tmp/tokei /usr/local/bin/tokei
-        rm -f /tmp/tokei.tar.gz
-    fi
+    # delta, lazygit, lazydocker, yq, gitleaks, tree-sitter, yazi, bottom,
+    # atuin, vivid are installed later via mise (see install_mise_tools) —
+    # mise's aqua backend checksum-verifies these GitHub releases instead of
+    # the hand-rolled curl+API pattern used elsewhere in this function.
 
     # GitHub CLI — official apt repo
     if ! command_exists gh; then
@@ -320,25 +275,7 @@ install_packages_debian() {
         rm -rf /tmp/awscliv2.zip /tmp/aws
     fi
 
-    # pnpm — official installer
-    if ! command_exists pnpm; then
-        info "Installing pnpm..."
-        curl --proto '=https' --tlsv1.2 -fsSL https://get.pnpm.io/install.sh | sh -s -- --no-shell-setup
-        export PNPM_HOME="$HOME/.local/share/pnpm"
-        export PATH="$PNPM_HOME:$PATH"
-    fi
-
-    # bun — official installer
-    if ! command_exists bun; then
-        info "Installing bun..."
-        curl --proto '=https' --tlsv1.2 -fsSL https://bun.sh/install | bash
-    fi
-
-    # uv — fast Python package manager
-    if ! command_exists uv; then
-        info "Installing uv..."
-        curl --proto '=https' --tlsv1.2 -LsSf https://astral.sh/uv/install.sh | sh
-    fi
+    # pnpm, bun, uv are installed later via mise (see install_mise_tools)
 
     # Nerd Fonts — download from GitHub releases
     local font_dir="$HOME/.local/share/fonts"
@@ -549,9 +486,9 @@ create_symlinks() {
 
 # -----------------------------------------------------------------------------
 # Install CLI tools declared in mise/config.toml (delta, lazygit, lazydocker,
-# yq, hyperfine, difftastic, gitleaks, tree-sitter, yazi, television, bottom,
-# plus python/node/go). Runs after create_symlinks so mise picks up the
-# symlinked ~/.config/mise/config.toml as its global config.
+# yq, gitleaks, tree-sitter, yazi, bottom, atuin, vivid, pnpm, bun, uv, plus
+# python/node/go). Runs after create_symlinks so mise picks up the symlinked
+# ~/.config/mise/config.toml as its global config.
 # -----------------------------------------------------------------------------
 install_mise_tools() {
     if ! command_exists mise; then

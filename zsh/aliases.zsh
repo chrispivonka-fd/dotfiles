@@ -137,7 +137,6 @@ elif command -v htop &>/dev/null; then
 fi
 command -v ncdu &>/dev/null && alias du='ncdu --color dark'
 command -v http &>/dev/null && alias https='http --default-scheme=https'
-command -v difft &>/dev/null && alias ddiff='difft'
 command -v just &>/dev/null && alias j='just'
 
 # --- Rust --------------------------------------------------------------------
@@ -256,25 +255,6 @@ if command -v aws &>/dev/null; then
     alias awslogs='aws logs tail --follow'
 fi
 
-# --- Kubernetes --------------------------------------------------------------
-if command -v kubectl &>/dev/null; then
-    alias k='kubectl'
-    alias kgp='kubectl get pods'
-    alias kgpa='kubectl get pods -A'
-    alias kgs='kubectl get services'
-    alias kgn='kubectl get nodes'
-    alias kgd='kubectl get deployments'
-    alias kaf='kubectl apply -f'
-    alias kdf='kubectl delete -f'
-    alias kdp='kubectl describe pod'
-    alias kl='kubectl logs -f'
-    alias kex='kubectl exec -it'
-    alias kctx='kubectl config use-context'
-    alias kns='kubectl config set-context --current --namespace'
-    alias kctxls='kubectl config get-contexts'
-fi
-command -v k9s &>/dev/null && alias k9='k9s'
-
 # --- Network & debugging -----------------------------------------------------
 alias myip='curl -s ifconfig.me'
 alias localip='ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk "{print \$1}"'
@@ -290,11 +270,6 @@ alias rd='rmdir'
 alias sizeof='du -sh'
 alias count='find . -type f | wc -l'
 alias ext='find . -type f | sed "s/.*\.//" | sort | uniq -c | sort -rn | head -20'
-
-# --- AI Aliases --------------------------------------------------------------
-if command -v mods &>/dev/null; then
-    alias ai='mods'
-fi
 
 # --- Common utilities --------------------------------------------------------
 alias path='echo $PATH | tr ":" "\n"'

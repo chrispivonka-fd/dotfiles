@@ -159,11 +159,6 @@ Google's interactive CLI for AI-assisted development (the tool you are using now
 - **Usage:** Run `gemini` to start an interactive session.
 - **Features:** Supports codebase awareness, tool usage, and seamless integration with Google's latest models.
 
-### Mods (`ai`)
-Perfect for piping AI results into other commands or files.
-- **Usage:** `ls | ai "Which of these files are source code?"`
-- **Formatting:** `cat data.json | ai "summarize this" --format markdown`
-
 ---
 
 ## 11. Cloud Infrastructure
@@ -173,8 +168,10 @@ Perfect for piping AI results into other commands or files.
 - **Vault:** `aws-vault` (Secure credential management)
 - **Aliases:**
   - `awsl <profile>` -> `aws-vault exec <profile>`
-  - `aws-who` -> Check current identity
-  - `s3ls` -> List S3 buckets
+  - `awsls` -> `aws-vault list`
+  - `awssso` -> `aws sso login` (if you're not using aws-vault for a given profile)
+  - `awsw` -> Check current identity
+  - `awss3` -> List S3 buckets
 
 ### Google Cloud (GCP)
 - **CLI:** `gcloud` (Google Cloud SDK)

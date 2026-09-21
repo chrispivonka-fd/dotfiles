@@ -78,18 +78,6 @@ return {
         },
     },
 
-    -- Subtle animations (cursor, scroll, window resize)
-    {
-        "echasnovski/mini.animate",
-        event = "VeryLazy",
-        opts = {
-            cursor = { enable = false },
-            scroll = { enable = true },
-            resize = { enable = true },
-            window = { enable = true },
-        },
-    },
-
     -- mini.icons — actively maintained replacement for nvim-web-devicons
     {
         "echasnovski/mini.icons",
@@ -127,36 +115,6 @@ return {
             { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics (Trouble)" },
             { "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", desc = "Symbols (Trouble)" },
             { "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", desc = "LSP Definitions / references / ... (Trouble)" },
-        },
-    },
-
-    -- Highly experimental UI overhaul (Noice)
-    {
-        "folke/noice.nvim",
-        event = "VeryLazy",
-        opts = {
-            lsp = {
-                override = {
-                    ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-                    ["vim.lsp.util.set_autocmd_lru"] = true,
-                    ["package.loaded['vim.lsp.util'].convert_input_to_markdown_lines"] = true,
-                },
-            },
-            presets = {
-                bottom_search = true,
-                command_palette = true,
-                long_message_to_split = true,
-            },
-            views = {
-                cmdline_popup = {
-                    position = { row = 5, col = "50%" },
-                    size = { width = 60, height = "auto" },
-                },
-            },
-        },
-        dependencies = {
-            "MunifTanjim/nui.nvim",
-            "rcarriga/nvim-notify",
         },
     },
 }
