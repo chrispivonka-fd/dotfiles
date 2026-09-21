@@ -37,6 +37,7 @@ Safe to run multiple times (idempotent).
 | **starship** | Fast prompt with GitHub Dark theme, git status, language versions |
 | **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, GitHub Dark status bar |
 | **neovim** | lazy.nvim, LSP (mason), blink.cmp, snacks.nvim (picker + UI), treesitter, GitHub Dark theme |
+| **claude** | Global Claude Code settings + custom subagents (golang-pro, rust-engineer, terraform-engineer, docker-expert, debugger) |
 | **bat** | GitHub Dark theme, line numbers + change markers |
 | **lazygit** | GitHub Dark theme, delta as the diff pager |
 | **editorconfig** | Consistent formatting across editors |
@@ -573,6 +574,11 @@ dotfiles/
 │           └── editor.lua      # autopairs, which-key, flash, lazydev, todo-comments
 ├── mise/
 │   └── config.toml         # -> ~/.config/mise/config.toml
+├── claude/                 # Only the portable, non-sensitive Claude Code
+│   │                       # config — conversation history, sessions, and
+│   │                       # shell snapshots under ~/.claude stay local
+│   ├── settings.json       # -> ~/.claude/settings.json
+│   └── agents/             # -> ~/.claude/agents (directory symlink)
 ├── bat/
 │   ├── config              # -> ~/.config/bat/config
 │   └── themes/             # -> ~/.config/bat/themes (custom GitHub Dark syntax theme)

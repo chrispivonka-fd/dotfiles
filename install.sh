@@ -471,6 +471,12 @@ create_symlinks() {
     link_file "$DOTFILES_DIR/yazi/yazi.toml"            "$HOME/.config/yazi/yazi.toml"
     link_file "$DOTFILES_DIR/mise/config.toml"          "$HOME/.config/mise/config.toml"
 
+    # Claude Code: only the portable, non-sensitive pieces (global settings +
+    # custom subagents). Everything else under ~/.claude (conversation
+    # history, session state, shell snapshots) stays local — never tracked.
+    link_file "$DOTFILES_DIR/claude/settings.json"      "$HOME/.claude/settings.json"
+    link_file "$DOTFILES_DIR/claude/agents"             "$HOME/.claude/agents"
+
     link_file "$DOTFILES_DIR/bat/config"                "$HOME/.config/bat/config"
     mkdir -p "$HOME/.config/bat/themes"
     link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
