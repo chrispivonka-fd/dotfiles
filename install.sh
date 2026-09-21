@@ -80,7 +80,7 @@ install_packages_macos() {
         gh git-lfs direnv just mise
         tldr jq htop ncdu httpie tree shellcheck
         pinentry-mac 1password-cli
-        ruff golangci-lint node
+        ruff golangci-lint
         awscli aws-vault terraform
     )
 
@@ -115,24 +115,6 @@ install_packages_macos() {
     info "Installing Nerd Fonts..."
     brew install --cask "${fonts[@]}" 2>/dev/null || true
     success "Nerd Fonts installed"
-
-    # Claude Code (Anthropic CLI)
-    if ! command_exists claude; then
-        info "Installing Claude Code..."
-        npm install -g @anthropic-ai/claude-code 2>/dev/null || true
-    fi
-
-    # Gemini CLI (Google AI CLI)
-    if ! command_exists gemini; then
-        info "Installing Gemini CLI..."
-        npm install -g @google/gemini-cli 2>/dev/null || true
-    fi
-
-    # AWS CDK
-    if ! command_exists cdk; then
-        info "Installing AWS CDK..."
-        npm install -g aws-cdk 2>/dev/null || true
-    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -146,7 +128,7 @@ install_packages_debian() {
     local apt_packages=(
         neovim tmux fzf ripgrep fd-find bat zoxide git git-lfs curl wget unzip
         tldr jq htop ncdu httpie tree shellcheck pinentry-curses gnupg
-        direnv nodejs npm terraform
+        direnv terraform
     )
     info "Installing core packages via apt..."
     sudo apt-get install -y -qq "${apt_packages[@]}"
@@ -169,23 +151,6 @@ install_packages_debian() {
         curl -LsSf https://astral.sh/ruff/install.sh | sh
     fi
 
-    # Claude Code (Anthropic CLI)
-    if ! command_exists claude; then
-        info "Installing Claude Code..."
-        sudo npm install -g @anthropic-ai/claude-code 2>/dev/null || true
-    fi
-
-    # Gemini CLI (Google AI CLI)
-    if ! command_exists gemini; then
-        info "Installing Gemini CLI..."
-        sudo npm install -g @google/gemini-cli 2>/dev/null || true
-    fi
-
-    # AWS CDK
-    if ! command_exists cdk; then
-        info "Installing AWS CDK..."
-        sudo npm install -g aws-cdk 2>/dev/null || true
-    fi
 
     # AWS CLI v2
     if ! command_exists aws; then
@@ -527,8 +492,8 @@ create_symlinks() {
 # -----------------------------------------------------------------------------
 # Install CLI tools declared in mise/config.toml (delta, lazygit, lazydocker,
 # yq, gitleaks, tree-sitter, yazi, bottom, atuin, vivid, pnpm, bun, uv, plus
-# python/node/go). Runs after create_symlinks so mise picks up the symlinked
-# ~/.config/mise/config.toml as its global config.
+# python/node/go/rust). Runs after create_symlinks so mise picks up the
+# symlinked ~/.config/mise/config.toml as its global config.
 # -----------------------------------------------------------------------------
 install_mise_tools() {
     if ! command_exists mise; then
@@ -539,6 +504,36 @@ install_mise_tools() {
     info "Installing tools declared in mise/config.toml (checksum-verified)..."
     mise install -y
     success "mise tools installed"
+}
+
+# -----------------------------------------------------------------------------
+# Install global npm CLIs (Claude Code, Gemini CLI, AWS CDK). Runs after
+# install_mise_tools so these land under mise's node, not Homebrew's — mise
+# is the only reliably-installed node on this script (see mise/config.toml).
+# -----------------------------------------------------------------------------
+install_global_npm_clis() {
+    if ! command_exists npm; then
+        warn "npm not found, skipping global CLI install"
+        return
+    fi
+
+    local sudo_cmd=""
+    [ "$OS" = "debian" ] && sudo_cmd="sudo"
+
+    if ! command_exists claude; then
+        info "Installing Claude Code..."
+        $sudo_cmd npm install -g @anthropic-ai/claude-code || warn "Claude Code install failed"
+    fi
+
+    if ! command_exists gemini; then
+        info "Installing Gemini CLI..."
+        $sudo_cmd npm install -g @google/gemini-cli || warn "Gemini CLI install failed"
+    fi
+
+    if ! command_exists cdk; then
+        info "Installing AWS CDK..."
+        $sudo_cmd npm install -g aws-cdk || warn "AWS CDK install failed"
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -637,6 +632,10 @@ main() {
 
     # Needs the symlinked ~/.config/mise/config.toml in place
     install_mise_tools
+
+    # Needs mise's node on PATH (Homebrew's node isn't installed by this
+    # script anymore — mise is the one reliable source of node here)
+    install_global_npm_clis
 
     # Install plugin managers
     install_zinit

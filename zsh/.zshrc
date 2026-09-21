@@ -83,9 +83,6 @@ if [ -d "$ZINIT_HOME" ]; then
     zinit light zdharma-continuum/fast-syntax-highlighting  # must be last
 fi
 
-# Replay completions from zinit plugins
-command -v zinit &>/dev/null && zinit cdreplay -q
-
 zinit wait"0" lucid for \
     atinit"zicompinit; zicdreplay" \
         zsh-users/zsh-completions \
