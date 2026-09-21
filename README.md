@@ -24,7 +24,7 @@ exec zsh
 
 Safe to run multiple times (idempotent).
 
-> **iTerm2 font setup:** Go to Settings > Profiles > Text > Font and select "MesloLGS Nerd Font" for icons to render.
+> **Terminal font:** These dotfiles target Warp and Terminal.app. Select a Nerd Font (MesloLGS, JetBrains Mono, or Fira Code — all installed by `install.sh`) in the terminal's font preferences.
 
 ---
 
@@ -36,7 +36,7 @@ Safe to run multiple times (idempotent).
 | **git** | Delta pager (GitHub Dark), useful aliases, histogram diffs, auto-rebase, rerere, SSH commit signing via 1Password, global hooks (secret/large-file/conflict-marker/whitespace guards, force-push protection) |
 | **starship** | Fast prompt with GitHub Dark theme, git status, language versions |
 | **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, GitHub Dark status bar |
-| **neovim** | lazy.nvim, LSP, telescope, treesitter, github-theme (GitHub Dark) |
+| **neovim** | lazy.nvim, LSP (mason), blink.cmp, snacks.nvim (picker + UI), treesitter, GitHub Dark theme |
 | **bat** | GitHub Dark theme, line numbers + change markers |
 | **lazygit** | GitHub Dark theme, delta as the diff pager |
 | **editorconfig** | Consistent formatting across editors |
@@ -66,6 +66,7 @@ Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses t
 |------|---------|---------------|
 | [fzf](https://github.com/junegunn/fzf) | Fuzzy finder for everything | `Ctrl+R` to search history |
 | [lazygit](https://github.com/jesseduffield/lazygit) | Terminal UI for git | `lg` to launch |
+| [lazydocker](https://github.com/jesseduffield/lazydocker) | Terminal UI for Docker | `lzd` to launch |
 | [starship](https://starship.rs/) | Cross-shell prompt | Automatic -- shows git, languages |
 | [jq](https://jqlang.github.io/jq/) | JSON processor | `curl api \| jq '.data'` |
 | [yq](https://github.com/mikefarah/yq) | YAML/TOML processor | `yq '.key' file.yaml` |
@@ -76,7 +77,6 @@ Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses t
 | [hyperfine](https://github.com/sharkdp/hyperfine) | Command benchmarking | `hyperfine 'cmd1' 'cmd2'` |
 | [difftastic](https://difftastic.wilfred.me.uk/) | Syntax-aware structural diffs | `difft file1 file2` |
 | [gh](https://cli.github.com/) | GitHub CLI | `gh pr create` |
-| [atuin](https://atuin.sh/) | Searchable shell history (SQLite, local-only) | `Ctrl+R` fuzzy history search |
 | [mise](https://mise.jdx.dev/) | Per-project runtime version manager | `mise use node@22` |
 | [gitleaks](https://github.com/gitleaks/gitleaks) | Secret scanner, wired into global pre-commit + pre-push hooks | Blocks commits/pushes containing keys/tokens |
 | [1Password CLI](https://developer.1password.com/docs/cli/) | SSH agent + secrets from the terminal | `op signin` |
@@ -144,6 +144,7 @@ gunwip    Undo last WIP commit
 gtags     List tags (newest first)
 gclean    Remove untracked files
 lg        lazygit
+lzd       lazydocker
 ghpr      gh pr create
 ghprv     gh pr view --web
 ghprs     gh pr status
@@ -187,6 +188,11 @@ pip       pip3
 venv      python3 -m venv
 activate  Source .venv or venv activate
 pipreq    pip freeze > requirements.txt
+uvs       uv sync
+uva       uv add <package>
+uvr       uv run <cmd>
+uvvenv    uv venv
+uvpi      uv pip install <package>
 ```
 
 #### Node/JS
@@ -197,6 +203,47 @@ nrd       npm run dev
 nrb       npm run build
 nrt       npm run test
 nrl       npm run lint
+pn        pnpm
+pni       pnpm install
+pnr       pnpm run
+pnd       pnpm run dev
+pnb       pnpm run build
+pnt       pnpm run test
+bi        bun install
+br        bun run
+bd        bun run dev
+bb        bun run build
+```
+
+#### AWS
+```
+awsp      Switch AWS profile interactively (fzf)
+awsl      aws sso login
+awsw      aws sts get-caller-identity (who am I?)
+awsprofile  Show current profile
+awsls     List configured profiles
+awsec2    List EC2 instances (table view)
+awss3     aws s3 ls
+awslogs   aws logs tail --follow <group>
+```
+
+#### Kubernetes
+```
+k         kubectl
+kgp       kubectl get pods
+kgpa      kubectl get pods -A (all namespaces)
+kgs       kubectl get services
+kgn       kubectl get nodes
+kgd       kubectl get deployments
+kaf       kubectl apply -f
+kdf       kubectl delete -f
+kdp       kubectl describe pod
+kl        kubectl logs -f
+kex       kubectl exec -it
+kctx      kubectl config use-context
+kns       kubectl config set-context --current --namespace
+kctxls    kubectl config get-contexts
+k9        k9s (terminal UI)
 ```
 
 #### Networking
@@ -273,17 +320,6 @@ mv        Prompts before overwrite (mv -i)
 | `Alt+C` | Search directories (cd into it) |
 | `**<Tab>` | Fuzzy completion (e.g., `vim **<Tab>`) |
 | `<Tab>` | fzf-tab fuzzy menu for any completion (cd, kill, git checkout, etc.) |
-
----
-
-### Atuin (Shell History)
-
-Local-only — sync and update checks are disabled in `~/.config/atuin/config.toml`. Never run `atuin register`/`atuin login` on this machine or history starts leaving it.
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+R` | Fuzzy search history (atuin) |
-| `↑` / `↓` | Normal zsh history search (unchanged, atuin doesn't take over the arrow keys) |
 
 ---
 
@@ -372,7 +408,7 @@ Local-only — sync and update checks are disabled in `~/.config/atuin/config.to
 | `<leader>e` | Toggle file explorer |
 | `<leader>E` | Reveal current file in explorer |
 
-#### Finding (Telescope)
+#### Finding (Snacks.picker)
 | Key | Action |
 |-----|--------|
 | `<leader>ff` | Find files |
@@ -384,6 +420,9 @@ Local-only — sync and update checks are disabled in `~/.config/atuin/config.to
 | `<leader>fs` | Git status |
 | `<leader>fc` | Git commits |
 | `<leader>ft` | Find TODOs |
+| `<leader>fw` | Search word under cursor |
+| `<leader>fk` | Keymaps |
+| `<leader>fp` | Projects |
 | `<leader>/` | Search in current buffer |
 
 #### LSP (when attached)
@@ -400,7 +439,7 @@ Local-only — sync and update checks are disabled in `~/.config/atuin/config.to
 | `[d` / `]d` | Prev/next diagnostic |
 | `<leader>d` | Show diagnostic float |
 
-#### Git (Gitsigns)
+#### Git (Gitsigns + Snacks)
 | Key | Action |
 |-----|--------|
 | `]h` / `[h` | Next/prev hunk |
@@ -412,6 +451,15 @@ Local-only — sync and update checks are disabled in `~/.config/atuin/config.to
 | `<leader>hb` | Blame line |
 | `<leader>hd` | Diff this |
 | `<leader>tb` | Toggle inline blame |
+| `<leader>gg` | Open lazygit (floating) |
+| `<leader>gB` | Open current file/line in GitHub |
+
+#### Terminal & UI
+| Key | Action |
+|-----|--------|
+| `<leader>tt` | Toggle floating terminal |
+| `<leader>tz` | Toggle zen mode |
+| `<leader>cf` | Format buffer (`conform.nvim`) |
 
 #### Editing
 | Key | Action |
@@ -441,7 +489,7 @@ Local-only — sync and update checks are disabled in `~/.config/atuin/config.to
 | `<leader>w` | Save file |
 | `<leader>q` | Quit |
 | `<leader>Q` | Force quit all |
-| `<leader>a` | Select all |
+| `<leader>va` | Select all |
 | `Ctrl+d/u` | Scroll down/up (centered) |
 | `Esc` | Clear search highlight |
 
@@ -539,21 +587,31 @@ dotfiles/
 │   └── .tmux.conf          # -> ~/.tmux.conf
 ├── nvim/                   # -> ~/.config/nvim (directory symlink)
 │   ├── init.lua
+│   ├── lazy-lock.json      # Plugin version pins
 │   └── lua/
 │       ├── options.lua
 │       ├── keymaps.lua
 │       ├── lazy-bootstrap.lua
 │       └── plugins/
-│           ├── telescope.lua
+│           ├── snacks.lua      # snacks.nvim (picker + explorer + indent + lazygit + terminal + more)
 │           ├── treesitter.lua
-│           ├── lsp.lua
-│           ├── ui.lua
-│           └── editor.lua
+│           ├── lsp.lua         # mason, blink.cmp, conform.nvim
+│           ├── ui.lua          # github-nvim-theme, lualine, gitsigns, mini.icons
+│           └── editor.lua      # autopairs, which-key, flash, lazydev, todo-comments
+├── mise/
+│   └── config.toml         # -> ~/.config/mise/config.toml
+├── bat/
+│   ├── config              # -> ~/.config/bat/config
+│   └── themes/             # -> ~/.config/bat/themes (custom GitHub Dark syntax theme)
+├── lazygit/
+│   └── config.yml          # -> ~/Library/Application Support/lazygit/config.yml (macOS)
+│                           #    or ~/.config/lazygit/config.yml (Linux)
 ├── editorconfig/
 │   └── .editorconfig       # -> ~/.editorconfig
 └── ripgrep/
     └── .ripgreprc           # -> ~/.ripgreprc
 ```
+
 
 ## Local Overrides
 

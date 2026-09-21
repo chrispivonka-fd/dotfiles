@@ -92,6 +92,9 @@ alias gtags='git tag -l --sort=-version:refname'
 # lazygit
 command -v lazygit &>/dev/null && alias lg='lazygit'
 
+# lazydocker
+command -v lazydocker &>/dev/null && alias lzd='lazydocker'
+
 # gh (GitHub CLI)
 if command -v gh &>/dev/null; then
     alias ghpr='gh pr create'
@@ -138,7 +141,8 @@ command -v difft &>/dev/null && alias ddiff='difft'
 command -v just &>/dev/null && alias j='just'
 
 # --- Rust --------------------------------------------------------------------
-alias c='cargo'
+# cg (not c) — c is 'clear' in Common utilities below
+alias cg='cargo'
 alias cb='cargo build'
 alias cr='cargo run'
 alias ct='cargo test'
@@ -148,10 +152,11 @@ alias ce='cargo expand'
 alias cl='cargo clippy'
 
 # --- Go ----------------------------------------------------------------------
-alias g='go'
+# gow/gob (not g/gb) — those are already taken by git above
+alias gow='go'
 alias gr='go run'
 alias gt='go test ./...'
-alias gb='go build'
+alias gob='go build'
 alias gi='go install'
 alias gmt='go mod tidy'
 
@@ -189,6 +194,15 @@ alias venv='python3 -m venv'
 alias activate='source .venv/bin/activate 2>/dev/null || source venv/bin/activate 2>/dev/null || echo "No venv found"'
 alias pipreq='pip freeze > requirements.txt'
 
+# uv (fast Python package manager — preferred over pip for new projects)
+if command -v uv &>/dev/null; then
+    alias uvs='uv sync'
+    alias uva='uv add'
+    alias uvr='uv run'
+    alias uvvenv='uv venv'
+    alias uvpi='uv pip install'
+fi
+
 # --- Node/TypeScript ---------------------------------------------------------
 alias n='npm'
 alias ni='npm install'
@@ -200,6 +214,66 @@ alias nrl='npm run lint'
 alias p='pnpm'
 alias px='pnpx'
 alias tsc='npx tsc'
+
+# pnpm (fast npm alternative)
+if command -v pnpm &>/dev/null; then
+    alias pn='pnpm'
+    alias pni='pnpm install'
+    alias pnr='pnpm run'
+    alias pnd='pnpm run dev'
+    alias pnb='pnpm run build'
+    alias pnt='pnpm run test'
+fi
+
+# bun (JS runtime & package manager)
+if command -v bun &>/dev/null; then
+    alias bi='bun install'
+    alias br='bun run'
+    alias bd='bun run dev'
+    alias bb='bun run build'
+fi
+
+# --- AWS ---------------------------------------------------------------------
+# awsl/awsls use aws-vault (this machine's workflow); the plain-SSO
+# equivalents are kept as awssso/awsprofiles to avoid shadowing them.
+if command -v aws &>/dev/null; then
+    # Switch AWS profile interactively (requires fzf)
+    awsp() {
+        local profile
+        profile=$(aws configure list-profiles 2>/dev/null | fzf --prompt="AWS Profile > " --height=40%) || return 1
+        export AWS_PROFILE="$profile"
+        echo "AWS_PROFILE set to: $AWS_PROFILE"
+    }
+    alias awsl='aws-vault exec'
+    alias awsls='aws-vault list'
+    alias awssso='aws sso login'
+    alias awsprofiles='aws configure list-profiles'
+    alias awsw='aws sts get-caller-identity'
+    alias awsregion='echo "${AWS_DEFAULT_REGION:-not set}"'
+    alias awsprofile='echo "${AWS_PROFILE:-default}"'
+    alias awsec2='aws ec2 describe-instances --output table'
+    alias awss3='aws s3 ls'
+    alias awslogs='aws logs tail --follow'
+fi
+
+# --- Kubernetes --------------------------------------------------------------
+if command -v kubectl &>/dev/null; then
+    alias k='kubectl'
+    alias kgp='kubectl get pods'
+    alias kgpa='kubectl get pods -A'
+    alias kgs='kubectl get services'
+    alias kgn='kubectl get nodes'
+    alias kgd='kubectl get deployments'
+    alias kaf='kubectl apply -f'
+    alias kdf='kubectl delete -f'
+    alias kdp='kubectl describe pod'
+    alias kl='kubectl logs -f'
+    alias kex='kubectl exec -it'
+    alias kctx='kubectl config use-context'
+    alias kns='kubectl config set-context --current --namespace'
+    alias kctxls='kubectl config get-contexts'
+fi
+command -v k9s &>/dev/null && alias k9='k9s'
 
 # --- Network & debugging -----------------------------------------------------
 alias myip='curl -s ifconfig.me'
@@ -240,14 +314,7 @@ alias uuid='python3 -c "import uuid; print(uuid.uuid4())"'
 alias serve='python3 -m http.server 8000'
 alias sha256='shasum -a 256'
 
-# --- Cloud (AWS & GCloud) ----------------------------------------------------
-if command -v aws &>/dev/null; then
-    alias awsl='aws-vault exec'
-    alias awsls='aws-vault list'
-    alias aws-who='aws sts get-caller-identity'
-    alias s3ls='aws s3 ls'
-fi
-
+# --- GCloud --------------------------------------------------------------------
 if command -v gcloud &>/dev/null; then
     alias gcp='gcloud'
     alias gcpl='gcloud auth login'

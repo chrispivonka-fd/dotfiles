@@ -1,5 +1,8 @@
 -- =============================================================================
--- LSP, completion, and formatting
+-- LSP, completion (blink.cmp), and formatting
+-- Server choices (basedpyright+ruff, vtsls) kept from the original setup;
+-- blink.cmp, mason-tool-installer, and the modern vim.lsp.config API are
+-- picked up from the dotfiles audit.
 -- =============================================================================
 
 return {
@@ -22,6 +25,8 @@ return {
                 "basedpyright",
                 "ruff",
                 "vtsls",
+                "eslint",
+                "taplo",        -- TOML
                 "bashls",
                 "jsonls",
                 "yamlls",
@@ -31,7 +36,90 @@ return {
                 "gopls",
                 "rust_analyzer",
             },
-            automatic_installation = true,
+            automatic_enable = true,
+        },
+    },
+
+    -- mason-tool-installer: ensure formatters are installed
+    {
+        "WhoIsSethDaniel/mason-tool-installer.nvim",
+        dependencies = { "williamboman/mason.nvim" },
+        opts = {
+            ensure_installed = {
+                "prettierd",    -- JS/TS/JSX/TSX/CSS/HTML/JSON/YAML/Markdown (fast daemon)
+                "prettier",     -- fallback for the above
+                "stylua",       -- Lua formatter
+                "goimports",    -- Go import organizer + formatter
+                "taplo",        -- TOML formatter
+            },
+        },
+    },
+
+    -- conform.nvim — lightweight formatter (format-on-save)
+    {
+        "stevearc/conform.nvim",
+        event = { "BufWritePre" },
+        cmd = { "ConformInfo" },
+        keys = {
+            {
+                "<leader>f",
+                function() require("conform").format({ async = true, lsp_format = "fallback" }) end,
+                mode = "",
+                desc = "Format buffer",
+            },
+        },
+        opts = {
+            formatters_by_ft = {
+                lua = { "stylua" },
+                python = { "ruff_format", "ruff_organize_imports" },
+                javascript = { "prettierd", "prettier", stop_after_first = true },
+                typescript = { "prettierd", "prettier", stop_after_first = true },
+                javascriptreact = { "prettierd", "prettier", stop_after_first = true },
+                typescriptreact = { "prettierd", "prettier", stop_after_first = true },
+                css = { "prettierd", "prettier", stop_after_first = true },
+                html = { "prettierd", "prettier", stop_after_first = true },
+                json = { "prettierd", "prettier", stop_after_first = true },
+                yaml = { "prettierd", "prettier", stop_after_first = true },
+                markdown = { "prettierd", "prettier", stop_after_first = true },
+                rust = { "rustfmt" },
+                go = { "goimports", "gofumpt" },
+                toml = { "taplo" },
+            },
+            format_on_save = { timeout_ms = 500, lsp_format = "fallback" },
+        },
+    },
+
+    -- blink.cmp — fast, Rust-powered completion (replaces nvim-cmp stack)
+    {
+        "saghen/blink.cmp",
+        dependencies = { "rafamadriz/friendly-snippets" },
+        version = "*",
+        opts = {
+            keymap = { preset = "default" },
+            appearance = {
+                nerd_font_variant = "mono",
+            },
+            sources = {
+                default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+                providers = {
+                    lazydev = {
+                        name = "LazyDev",
+                        module = "lazydev.integrations.blink",
+                        score_offset = 100,
+                    },
+                },
+            },
+            signature = { enabled = true },
+            completion = {
+                documentation = {
+                    auto_show = true,
+                    auto_show_delay_ms = 200,
+                    window = { border = "rounded" },
+                },
+                menu = {
+                    border = "rounded",
+                },
+            },
         },
     },
 
@@ -42,18 +130,11 @@ return {
         dependencies = {
             "williamboman/mason.nvim",
             "williamboman/mason-lspconfig.nvim",
-            "hrsh7th/cmp-nvim-lsp",
+            "saghen/blink.cmp",
         },
         config = function()
-            local lspconfig = require("lspconfig")
-            local cmp_lsp = require("cmp_nvim_lsp")
-
-            local capabilities = vim.tbl_deep_extend(
-                "force",
-                {},
-                vim.lsp.protocol.make_client_capabilities(),
-                cmp_lsp.default_capabilities()
-            )
+            -- blink.cmp provides enhanced capabilities (replaces cmp-nvim-lsp)
+            local capabilities = require("blink.cmp").get_lsp_capabilities()
 
             -- Keymaps set when LSP attaches to a buffer
             vim.api.nvim_create_autocmd("LspAttach", {
@@ -86,170 +167,68 @@ return {
                 float = { border = "rounded" },
             })
 
-            -- Setup each server
-            local servers = {
-                lua_ls = {
-                    settings = {
-                        Lua = {
-                            workspace = { checkThirdParty = false },
-                            telemetry = { enable = false },
-                            diagnostics = { globals = { "vim" } },
+            -- Apply capabilities to every server. mason-lspconfig.nvim's
+            -- automatic_enable = true (see above) calls vim.lsp.enable() for each
+            -- ensure_installed server, which merges in these vim.lsp.config()
+            -- overrides — no manual lspconfig[server].setup() loop needed.
+            vim.lsp.config("*", { capabilities = capabilities })
+
+            vim.lsp.config("lua_ls", {
+                settings = {
+                    Lua = {
+                        workspace = { checkThirdParty = false },
+                        telemetry = { enable = false },
+                        diagnostics = { globals = { "vim" } },
+                    },
+                },
+            })
+
+            vim.lsp.config("basedpyright", {
+                settings = {
+                    basedpyright = {
+                        analysis = {
+                            typeCheckingMode = "basic",
+                            autoSearchPaths = true,
+                            useLibraryCodeForTypes = true,
                         },
                     },
                 },
-                basedpyright = {
-                    settings = {
-                        basedpyright = {
-                            analysis = {
-                                typeCheckingMode = "basic",
-                                autoSearchPaths = true,
-                                useLibraryCodeForTypes = true,
-                            },
+            })
+
+            vim.lsp.config("vtsls", {
+                settings = {
+                    typescript = {
+                        updateImportsOnFileMove = { enabled = "always" },
+                        inlayHints = {
+                            parameterNames = { enabled = "all" },
+                            parameterTypes = { enabled = true },
+                            variableTypes = { enabled = true },
+                            propertyDeclarationTypes = { enabled = true },
+                            functionLikeReturnTypes = { enabled = true },
+                            enumMemberValues = { enabled = true },
                         },
                     },
                 },
-                ruff = {},
-                vtsls = {
-                    settings = {
-                        typescript = {
-                            updateImportsOnFileMove = { enabled = "always" },
-                            inlayHints = {
-                                parameterNames = { enabled = "all" },
-                                parameterTypes = { enabled = true },
-                                variableTypes = { enabled = true },
-                                propertyDeclarationTypes = { enabled = true },
-                                functionLikeReturnTypes = { enabled = true },
-                                enumMemberValues = { enabled = true },
-                            },
-                        },
+            })
+
+            vim.lsp.config("gopls", {
+                settings = {
+                    gopls = {
+                        analyses = { unusedparams = true },
+                        staticcheck = true,
+                        gofumpt = true,
                     },
                 },
-                bashls = {},
-                jsonls = {},
-                yamlls = {},
-                html = {},
-                cssls = {},
-                dockerls = {},
-                gopls = {
-                    settings = {
-                        gopls = {
-                            analyses = { unusedparams = true },
-                            staticcheck = true,
-                            gofumpt = true,
-                        },
+            })
+
+            vim.lsp.config("rust_analyzer", {
+                settings = {
+                    ["rust-analyzer"] = {
+                        checkOnSave = { command = "clippy" },
+                        cargo = { allFeatures = true },
+                        procMacro = { enable = true },
                     },
                 },
-                rust_analyzer = {
-                    settings = {
-                        ["rust-analyzer"] = {
-                            checkOnSave = { command = "clippy" },
-                            cargo = { allFeatures = true },
-                            procMacro = { enable = true },
-                        },
-                    },
-                },
-            }
-
-            for server, config in pairs(servers) do
-                config.capabilities = capabilities
-                lspconfig[server].setup(config)
-            end
-        end,
-    },
-
-    -- Better formatting
-    {
-        "stevearc/conform.nvim",
-        event = { "BufWritePre" },
-        cmd = { "ConformInfo" },
-        keys = {
-            {
-                "<leader>f",
-                function()
-                    require("conform").format({ async = true, lsp_fallback = true })
-                end,
-                mode = "",
-                desc = "Format buffer",
-            },
-        },
-        opts = {
-            formatters_by_ft = {
-                lua = { "stylua" },
-                python = { "ruff_format", "ruff_organize_imports" },
-                javascript = { "prettierd", "prettier", stop_after_first = true },
-                typescript = { "prettierd", "prettier", stop_after_first = true },
-                javascriptreact = { "prettierd", "prettier", stop_after_first = true },
-                typescriptreact = { "prettierd", "prettier", stop_after_first = true },
-                json = { "prettierd", "prettier", stop_after_first = true },
-                yaml = { "prettierd", "prettier", stop_after_first = true },
-                markdown = { "prettierd", "prettier", stop_after_first = true },
-                rust = { "rustfmt" },
-                go = { "goimports", "gofumpt" },
-            },
-            format_on_save = { timeout_ms = 500, lsp_fallback = true },
-        },
-    },
-
-    -- Autocompletion
-    {
-        "hrsh7th/nvim-cmp",
-        event = "InsertEnter",
-        dependencies = {
-            "hrsh7th/cmp-nvim-lsp",
-            "hrsh7th/cmp-buffer",
-            "hrsh7th/cmp-path",
-            "L3MON4D3/LuaSnip",
-            "saadparwaiz1/cmp_luasnip",
-            "rafamadriz/friendly-snippets",
-        },
-        config = function()
-            local cmp = require("cmp")
-            local luasnip = require("luasnip")
-
-            require("luasnip.loaders.from_vscode").lazy_load()
-
-            cmp.setup({
-                snippet = {
-                    expand = function(args)
-                        luasnip.lsp_expand(args.body)
-                    end,
-                },
-                window = {
-                    completion = cmp.config.window.bordered(),
-                    documentation = cmp.config.window.bordered(),
-                },
-                mapping = cmp.mapping.preset.insert({
-                    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-                    ["<C-f>"] = cmp.mapping.scroll_docs(4),
-                    ["<C-Space>"] = cmp.mapping.complete(),
-                    ["<C-e>"] = cmp.mapping.abort(),
-                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
-                    ["<Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            cmp.select_next_item()
-                        elseif luasnip.expand_or_jumpable() then
-                            luasnip.expand_or_jump()
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s" }),
-                    ["<S-Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            cmp.select_prev_item()
-                        elseif luasnip.jumpable(-1) then
-                            luasnip.jump(-1)
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s" }),
-                }),
-                sources = cmp.config.sources({
-                    { name = "nvim_lsp" },
-                    { name = "luasnip" },
-                    { name = "path" },
-                }, {
-                    { name = "buffer" },
-                }),
             })
         end,
     },

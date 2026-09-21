@@ -8,13 +8,24 @@ palette = "github_dark"
 format = """
 $os $directory$git_branch$git_status$python$nodejs$rust$golang$java$docker_context$aws$kubernetes$terraform$cmd_duration$jobs$character"""
 
-right_format = """$cmd_duration"""
+right_format = ""
+
+# --- OS icon -----------------------------------------------------------------
+[os]
+disabled = false
+style = "fg:fg_muted"
+
+[os.symbols]
+Macos = ""
+Linux = "🐧"
+Ubuntu = ""
+Debian = ""
 
 # --- Character (prompt symbol) -----------------------------------------------
 [character]
-success_symbol = "[󰄾](bold lavender)"
-error_symbol = "[󰄾](bold red)"
-vimcmd_symbol = "[󰄼](bold green)"
+success_symbol = "[](bold blue_bright)"
+error_symbol = "[](bold red)"
+vimcmd_symbol = "[](bold green)"
 
 # --- Directory ---------------------------------------------------------------
 [directory]
@@ -33,13 +44,13 @@ truncate_to_repo = true
 [git_branch]
 format = "[$symbol$branch(:$remote_branch)]($style) "
 symbol = " "
-style = "bold mauve"
+style = "bold purple"
 truncation_length = 25
 
 # --- Git status --------------------------------------------------------------
 [git_status]
 format = '([$all_status$ahead_behind]($style) )'
-style = "bold peach"
+style = "bold orange"
 conflicted = "󰞇 ${count} "
 ahead = "󰜷 ${count} "
 behind = "󰜮 ${count} "
@@ -70,7 +81,7 @@ style = "red"
 [golang]
 format = '[$symbol($version)]($style) '
 symbol = " "
-style = "teal"
+style = "cyan"
 
 [java]
 format = '[$symbol($version)]($style) '
@@ -93,14 +104,14 @@ style = "yellow"
 format = '[$symbol$context(\($namespace\))]($style) '
 symbol = "󱃾 "
 disabled = false
-style = "teal"
+style = "cyan"
 detect_files = ["k8s"]
 detect_folders = ["k8s", ".kube"]
 
 [terraform]
 format = '[$symbol$workspace]($style) '
 symbol = "󱁢 "
-style = "mauve"
+style = "purple"
 
 # --- Command duration --------------------------------------------------------
 [cmd_duration]
@@ -113,7 +124,7 @@ show_milliseconds = false
 [jobs]
 format = '[$symbol$number]($style) '
 symbol = "󱕷 "
-style = "teal"
+style = "cyan"
 number_threshold = 1
 
 # --- Disabled (keep prompt fast) ---------------------------------------------
@@ -123,31 +134,20 @@ disabled = true
 [battery]
 disabled = true
 
-# --- GitHub Dark Palette ------------------------------------------------------
+# --- GitHub Dark Palette -----------------------------------------------------
 [palettes.github_dark]
-rosewater = "#ffa198"
-flamingo = "#ffa657"
-pink = "#d2a8ff"
-mauve = "#bc8cff"
+fg = "#e6edf3"
+fg_muted = "#8b949e"
+fg_subtle = "#6e7681"
+bg = "#0d1117"
+bg_subtle = "#161b22"
+border = "#30363d"
 red = "#ff7b72"
-maroon = "#ffa198"
-peach = "#ffa657"
+orange = "#f0883e"
 yellow = "#d29922"
 green = "#3fb950"
-teal = "#76e3ea"
-sky = "#79c0ff"
-sapphire = "#58a6ff"
+cyan = "#39c5cf"
 blue = "#58a6ff"
-lavender = "#bc8cff"
-text = "#e6edf3"
-subtext1 = "#b1bac4"
-subtext0 = "#8b949e"
-overlay2 = "#8b949e"
-overlay1 = "#6e7681"
-overlay0 = "#6e7681"
-surface2 = "#30363d"
-surface1 = "#21262d"
-surface0 = "#161b22"
-base = "#0d1117"
-mantle = "#010409"
-crust = "#010409"
+blue_bright = "#79c0ff"
+purple = "#bc8cff"
+white = "#b1bac4"

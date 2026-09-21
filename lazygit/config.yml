@@ -1,9 +1,9 @@
-# GitHub Dark theme
+# GitHub Dark theme — https://github.com/projekt0n/github-nvim-theme
 gui:
   nerdFontsVersion: "3"
   theme:
     activeBorderColor:
-      - "#bc8cff"
+      - "#58a6ff"
       - bold
     inactiveBorderColor:
       - "#8b949e"
@@ -12,7 +12,7 @@ gui:
     selectedLineBgColor:
       - "#161b22"
     cherryPickedCommitBgColor:
-      - "#76e3ea"
+      - "#39c5cf"
     cherryPickedCommitFgColor:
       - "#58a6ff"
     unstagedChangesColor:
@@ -27,4 +27,4 @@ git:
     pager: delta --dark --paging=never
 
 os:
-  editCommand: 'nvim'
+  editPreset: nvim

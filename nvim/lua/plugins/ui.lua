@@ -1,29 +1,32 @@
 -- =============================================================================
--- UI: theme, statusline, git signs, indent guides
+-- UI: theme, statusline, git signs
+-- Indent guides are handled by snacks.nvim (see snacks.lua)
 -- =============================================================================
 
 return {
     -- GitHub Dark theme
     {
         "projekt0n/github-nvim-theme",
-        name = "github-theme",
+        name = "github-nvim-theme",
         priority = 1000,
         lazy = false,
-        opts = {
-            options = {
-                transparent = false,
-            },
-        },
-        config = function(_, opts)
-            require("github-theme").setup(opts)
-            vim.cmd.colorscheme("github_dark")
+        config = function()
+            require("github-theme").setup({
+                options = {
+                    transparent = false,
+                    styles = {
+                        comments = "italic",
+                        keywords = "bold",
+                    },
+                },
+            })
+            vim.cmd.colorscheme("github_dark_default")
         end,
     },
 
     -- Statusline
     {
         "nvim-lualine/lualine.nvim",
-        dependencies = { "nvim-tree/nvim-web-devicons" },
         event = "VeryLazy",
         opts = {
             options = {
@@ -75,27 +78,6 @@ return {
         },
     },
 
-    -- Snacks.nvim: A collection of small QoL plugins (Dashboard, Scroll, etc.)
-    {
-        "folke/snacks.nvim",
-        priority = 1000,
-        lazy = false,
-        opts = {
-            dashboard = { enabled = true },
-            indent = { enabled = true },
-            input = { enabled = true },
-            notifier = { enabled = true, timeout = 3000 },
-            scope = { enabled = true },
-            scroll = { enabled = true },
-            statuscolumn = { enabled = true },
-            words = { enabled = true },
-        },
-        keys = {
-            { "<leader>n", function() Snacks.notifier.show_history() end, desc = "Notification History" },
-            { "<leader>un", function() Snacks.notifier.hide() end, desc = "Dismiss All Notifications" },
-        },
-    },
-
     -- Subtle animations (cursor, scroll, window resize)
     {
         "echasnovski/mini.animate",
@@ -108,10 +90,21 @@ return {
         },
     },
 
-    -- Icons (dependency for many plugins)
+    -- mini.icons — actively maintained replacement for nvim-web-devicons
     {
-        "nvim-tree/nvim-web-devicons",
+        "echasnovski/mini.icons",
         lazy = true,
+        opts = {
+            style = "glyph",
+        },
+        init = function()
+            -- Provide nvim-web-devicons compatibility shim so plugins that
+            -- require("nvim-web-devicons") work without a separate install
+            package.preload["nvim-web-devicons"] = function()
+                require("mini.icons").mock_nvim_web_devicons()
+                return package.loaded["nvim-web-devicons"]
+            end
+        end,
     },
 
     -- Better diagnostics list

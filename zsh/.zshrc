@@ -42,8 +42,7 @@ setopt HIST_IGNORE_ALL_DUPS      # remove older duplicate
 setopt HIST_IGNORE_SPACE         # commands starting with space not saved
 setopt HIST_FIND_NO_DUPS         # no dupes in search results
 setopt HIST_SAVE_NO_DUPS         # no dupes written to file
-setopt SHARE_HISTORY             # share history across sessions
-setopt INC_APPEND_HISTORY        # append immediately, not on exit
+setopt SHARE_HISTORY             # share history across sessions (implies INC_APPEND_HISTORY)
 
 # --- Shell options -----------------------------------------------------------
 setopt AUTO_CD                   # cd by typing directory name
@@ -81,7 +80,7 @@ if [ -d "$ZINIT_HOME" ]; then
     zstyle ':fzf-tab:*' switch-group ',' '.'
 
     zinit light zsh-users/zsh-autosuggestions
-    zinit light zsh-users/zsh-syntax-highlighting  # must be last
+    zinit light zdharma-continuum/fast-syntax-highlighting  # must be last
 fi
 
 # Replay completions from zinit plugins
@@ -125,13 +124,13 @@ bindkey -M vicmd 'j' history-substring-search-down
 
 # --- FZF integration ---------------------------------------------------------
 if command -v fzf &>/dev/null; then
-    # GitHub Dark — https://github.com/primer
+    # GitHub Dark — https://github.com/projekt0n/github-nvim-theme
     export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --info=inline \
---color=bg+:#161b22,bg:#0d1117,spinner:#ffa198,hl:#ff7b72 \
---color=fg:#e6edf3,header:#ff7b72,info:#bc8cff,pointer:#ffa198 \
---color=marker:#58a6ff,fg+:#e6edf3,prompt:#bc8cff,hl+:#ff7b72 \
---color=selected-bg:#21262d \
---color=border:#161b22,label:#e6edf3"
+--color=bg+:#161b22,bg:#0d1117,spinner:#58a6ff,hl:#ff7b72 \
+--color=fg:#e6edf3,header:#ff7b72,info:#bc8cff,pointer:#58a6ff \
+--color=marker:#3fb950,fg+:#e6edf3,prompt:#58a6ff,hl+:#ffa198 \
+--color=selected-bg:#30363d \
+--color=border:#30363d,label:#e6edf3"
 
     # Use fd for file finding if available
     if command -v fd &>/dev/null; then
@@ -156,18 +155,18 @@ if command -v fzf &>/dev/null; then
     fi
 fi
 
-# --- Eza colors (GitHub Dark) -------------------------------------------------
+# --- Eza colors (GitHub Dark) ------------------------------------------------
 if command -v eza &>/dev/null; then
-    export EZA_COLORS="di=38;2;88;166;255:ex=38;2;63;185;80:ln=38;2;118;227;234:\
-pi=38;2;210;153;34:so=38;2;188;140;255:bd=38;2;255;166;87:cd=38;2;255;166;87:\
+    export EZA_COLORS="di=38;2;88;166;255:ex=38;2;63;185;80:ln=38;2;57;197;207:\
+pi=38;2;210;153;34:so=38;2;188;140;255:bd=38;2;240;136;62:cd=38;2;240;136;62:\
 or=38;2;255;123;114:uu=38;2;63;185;80:un=38;2;255;123;114:gu=38;2;63;185;80:\
-gn=38;2;255;123;114:da=38;2;118;227;234"
+gn=38;2;255;123;114:da=38;2;57;197;207"
 fi
 
 # --- Zoxide (smarter cd) ----------------------------------------------------
 command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
-# --- Atuin (searchable shell history, local-only — see atuin/config.toml) ---
+# --- Atuin (searchable shell history, local-only) -----------------------------
 command -v atuin &>/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
 
 # --- Mise (per-project runtime version manager) ------------------------------

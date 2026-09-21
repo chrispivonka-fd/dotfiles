@@ -92,3 +92,7 @@
 [gpg "ssh"]
 	program = op-ssh-sign
 	allowedSignersFile = ~/.ssh/allowed_signers
+
+[maintenance]
+    auto = true
+    strategy = incremental
