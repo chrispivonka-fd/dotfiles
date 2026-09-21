@@ -66,7 +66,8 @@ Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses t
 |------|---------|---------------|
 | [fzf](https://github.com/junegunn/fzf) | Fuzzy finder for everything | `Ctrl+R` to search history |
 | [lazygit](https://github.com/jesseduffield/lazygit) | Terminal UI for git | `lg` to launch |
-| [lazydocker](https://github.com/jesseduffield/lazydocker) | Terminal UI for Docker | `lzd` to launch |
+| [OrbStack](https://orbstack.dev/) (macOS) / Docker Engine (Linux) | Container runtime | `docker`/`dc` aliases |
+| [lazydocker](https://github.com/jesseduffield/lazydocker) | Terminal UI for Docker | `ld` to launch |
 | [starship](https://starship.rs/) | Cross-shell prompt | Automatic -- shows git, languages |
 | [jq](https://jqlang.github.io/jq/) | JSON processor | `curl api \| jq '.data'` |
 | [yq](https://github.com/mikefarah/yq) | YAML/TOML processor | `yq '.key' file.yaml` |
@@ -140,7 +141,7 @@ gunwip    Undo last WIP commit
 gtags     List tags (newest first)
 gclean    Remove untracked files
 lg        lazygit
-lzd       lazydocker
+ld        lazydocker
 ghpr      gh pr create
 ghprv     gh pr view --web
 ghprs     gh pr status

@@ -93,6 +93,12 @@ install_packages_macos() {
         brew install --cask google-cloud-sdk 2>/dev/null || true
     fi
 
+    # OrbStack (Docker runtime — lightweight Docker Desktop replacement)
+    if ! command_exists docker; then
+        info "Installing OrbStack..."
+        brew install --cask orbstack 2>/dev/null || true
+    fi
+
     success "Homebrew packages installed"
 
     # delta, lazygit, lazydocker, yq, gitleaks, tree-sitter, yazi, bottom,
@@ -253,6 +259,15 @@ install_packages_debian() {
     if ! command_exists mise; then
         info "Installing mise..."
         curl --proto '=https' --tlsv1.2 -sS https://mise.run | sh
+    fi
+
+    # Docker Engine — official convenience script (auto-detects the exact
+    # distro; OrbStack, used on macOS, doesn't have a Linux equivalent)
+    if ! command_exists docker; then
+        info "Installing Docker Engine..."
+        curl -fsSL https://get.docker.com | sh
+        sudo usermod -aG docker "$USER"
+        warn "Added $USER to the docker group — log out/in (or run 'newgrp docker') for it to take effect"
     fi
 
     # 1Password CLI — official apt repo
@@ -634,7 +649,7 @@ main() {
     info "In tmux, press Ctrl-a + I to install tmux plugins"
     info "In nvim, run :MasonUpdate to refresh LSP servers"
     info "AWS: run 'aws configure' or 'aws sso login' to authenticate"
-    info "mise: run 'mise install' to install global runtimes (python, node, go)"
+    info "mise: run 'mise install' to install global runtimes (python, node, go, rust)"
     info "git: run 'git maintenance start' in large repos for background optimizations"
     echo ""
 }

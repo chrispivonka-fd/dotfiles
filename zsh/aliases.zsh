@@ -92,9 +92,6 @@ alias gtags='git tag -l --sort=-version:refname'
 # lazygit
 command -v lazygit &>/dev/null && alias lg='lazygit'
 
-# lazydocker
-command -v lazydocker &>/dev/null && alias lzd='lazydocker'
-
 # gh (GitHub CLI)
 if command -v gh &>/dev/null; then
     alias ghpr='gh pr create'

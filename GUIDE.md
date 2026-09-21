@@ -111,7 +111,7 @@ Our config uses `Lazy.nvim` as the plugin manager and `Mason` for LSP/Tool manag
 
 ---
 
-## 8. Language Workflows
+## 7. Language Workflows
 
 ### 🦀 Rust
 - **Editor:** `rust-analyzer` is fully configured with `clippy` on save and inlay hints.
@@ -147,7 +147,7 @@ Our config uses `Lazy.nvim` as the plugin manager and `Mason` for LSP/Tool manag
 
 ---
 
-## 10. AI Power Tools
+## 8. AI Power Tools
 
 ### Claude Code (`claude`)
 Anthropic's official CLI for high-performance engineering tasks.
@@ -161,7 +161,7 @@ Google's interactive CLI for AI-assisted development (the tool you are using now
 
 ---
 
-## 11. Cloud Infrastructure
+## 9. Cloud Infrastructure
 
 ### AWS
 - **CLI:** `aws` (AWS CLI v2)

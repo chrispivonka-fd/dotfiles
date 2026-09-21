@@ -9,6 +9,7 @@
 python = "3.13"
 node = "lts"
 go = "latest"
+rust = "latest"
 
 # Package managers/runtimes for the above — mise-managed so there's one
 # consistent, checksum-verified path instead of each having its own
