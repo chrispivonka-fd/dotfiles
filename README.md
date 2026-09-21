@@ -37,7 +37,7 @@ Safe to run multiple times (idempotent).
 | **starship** | Fast prompt with GitHub Dark theme, git status, language versions |
 | **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, GitHub Dark status bar |
 | **neovim** | lazy.nvim, LSP (mason), blink.cmp, snacks.nvim (picker + UI), treesitter, GitHub Dark theme |
-| **claude** | Global Claude Code settings + custom subagents (golang-pro, rust-engineer, terraform-engineer, docker-expert, debugger) |
+| **claude** | Global Claude Code settings + 15 custom subagents across language, infra, data, dev-experience, and quality categories |
 | **bat** | GitHub Dark theme, line numbers + change markers |
 | **lazygit** | GitHub Dark theme, delta as the diff pager |
 | **editorconfig** | Consistent formatting across editors |
@@ -579,6 +579,12 @@ dotfiles/
 │   │                       # shell snapshots under ~/.claude stay local
 │   ├── settings.json       # -> ~/.claude/settings.json
 │   └── agents/             # -> ~/.claude/agents (directory symlink)
+│       ├── language-specialists/    # golang-pro, rust-engineer, python-pro,
+│       │                            # typescript-pro, nextjs-developer, react-specialist
+│       ├── infrastructure/          # docker-expert, terraform-engineer, cloud-architect
+│       ├── data-ai/                 # postgres-pro
+│       ├── developer-experience/    # git-workflow-manager, cli-developer, dependency-manager
+│       └── quality-security/        # debugger, test-automator
 ├── bat/
 │   ├── config              # -> ~/.config/bat/config
 │   └── themes/             # -> ~/.config/bat/themes (custom GitHub Dark syntax theme)
