@@ -468,6 +468,7 @@ create_symlinks() {
     link_file "$DOTFILES_DIR/git/hooks"                 "$HOME/.githooks"
     link_file "$DOTFILES_DIR/bin/tmux-sessionizer"      "$HOME/.local/bin/tmux-sessionizer"
     link_file "$DOTFILES_DIR/bin/op-ssh-sign"           "$HOME/.local/bin/op-ssh-sign"
+    link_file "$DOTFILES_DIR/bin/render-aws-config"     "$HOME/.local/bin/render-aws-config"
     link_file "$DOTFILES_DIR/yazi/yazi.toml"            "$HOME/.config/yazi/yazi.toml"
     link_file "$DOTFILES_DIR/mise/config.toml"          "$HOME/.config/mise/config.toml"
 
@@ -496,6 +497,24 @@ create_symlinks() {
     fi
     mkdir -p "$vscode_dir"
     link_file "$DOTFILES_DIR/vscode/settings.json" "$vscode_dir/settings.json"
+
+    # Antigravity is a VS Code fork and shares the exact same settings —
+    # single source of truth, both editors symlink to vscode/settings.json
+    if [ "$OS" = "macos" ]; then
+        local antigravity_dir="$HOME/Library/Application Support/Antigravity/User"
+        mkdir -p "$antigravity_dir"
+        link_file "$DOTFILES_DIR/vscode/settings.json" "$antigravity_dir/settings.json"
+    fi
+
+    # Gemini CLI settings
+    mkdir -p "$HOME/.gemini"
+    link_file "$DOTFILES_DIR/gemini/settings.json" "$HOME/.gemini/settings.json"
+
+    # SSH config (no secrets — the private key itself is never touched)
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    link_file "$DOTFILES_DIR/ssh/config" "$HOME/.ssh/config"
+    chmod 600 "$HOME/.ssh/config"
 
     success "All symlinks created"
 

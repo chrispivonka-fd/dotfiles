@@ -542,7 +542,8 @@ dotfiles/
 ├── install.sh              # Bootstrap + install script (macOS & Linux)
 ├── bin/
 │   ├── tmux-sessionizer    # -> ~/.local/bin/tmux-sessionizer
-│   └── op-ssh-sign         # -> ~/.local/bin/op-ssh-sign (portable 1Password signing shim)
+│   ├── op-ssh-sign         # -> ~/.local/bin/op-ssh-sign (portable 1Password signing shim)
+│   └── render-aws-config   # -> ~/.local/bin/render-aws-config (renders aws/config.tpl via `op inject`)
 ├── zsh/
 │   ├── .zshrc              # -> ~/.zshrc
 │   └── aliases.zsh         # Sourced from .zshrc
@@ -585,6 +586,13 @@ dotfiles/
 │       ├── data-ai/                 # postgres-pro
 │       ├── developer-experience/    # git-workflow-manager, cli-developer, dependency-manager
 │       └── quality-security/        # debugger, test-automator
+├── gemini/
+│   └── settings.json       # -> ~/.gemini/settings.json
+├── ssh/
+│   └── config              # -> ~/.ssh/config (host aliases only — never keys)
+├── aws/
+│   └── config.tpl          # -> rendered to ~/.aws/config via bin/render-aws-config
+│                           #    (account ID lives in 1Password, not here)
 ├── bat/
 │   ├── config              # -> ~/.config/bat/config
 │   └── themes/             # -> ~/.config/bat/themes (custom GitHub Dark syntax theme)

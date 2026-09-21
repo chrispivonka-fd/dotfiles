@@ -203,6 +203,5 @@ export PATH="/Users/chris/.antigravity/antigravity/bin:$PATH"
 # Added by Antigravity IDE
 export PATH="/Users/chris/.antigravity-ide/antigravity-ide/bin:$PATH"
 
-
-# Added by Antigravity CLI installer
-export PATH="/Users/chris/.local/bin:$PATH"
+# Added by OrbStack: command-line tools and integration
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :
