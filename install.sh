@@ -585,7 +585,6 @@ create_symlinks() {
     link_file "$DOTFILES_DIR/bin/op-ssh-sign"           "$HOME/.local/bin/op-ssh-sign"
     link_file "$DOTFILES_DIR/yazi/yazi.toml"            "$HOME/.config/yazi/yazi.toml"
     link_file "$DOTFILES_DIR/mise/config.toml"          "$HOME/.config/mise/config.toml"
-    link_file "$DOTFILES_DIR/ghostty/config"            "$HOME/.config/ghostty/config"
 
     link_file "$DOTFILES_DIR/bat/config"                "$HOME/.config/bat/config"
     mkdir -p "$HOME/.config/bat/themes"
