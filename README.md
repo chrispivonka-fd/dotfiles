@@ -589,7 +589,9 @@ dotfiles/
 ├── gemini/
 │   └── settings.json       # -> ~/.gemini/settings.json
 ├── ssh/
-│   └── config              # -> ~/.ssh/config (host aliases only — never keys)
+│   └── config              # -> ~/.ssh/config (shared config + 1Password agent;
+│                           #    includes ~/.ssh/config.local for machine-specific
+│                           #    host aliases — never keys)
 ├── aws/
 │   └── config.tpl          # -> rendered to ~/.aws/config via bin/render-aws-config
 │                           #    (account ID lives in 1Password, not here)
@@ -615,5 +617,6 @@ Personal and machine-specific settings are kept in `.local` files (gitignored):
 | `~/.gitconfig.local` | Git identity (name, email, signing key, credential helper) |
 | `~/.zshrc.local` | Private exports, API keys, custom PATH |
 | `~/.tmux.local.conf` | Machine-specific tmux settings |
+| `~/.ssh/config.local` | Machine-specific SSH host aliases (LAN IPs, personal hosts) |
 
 Created automatically by `install.sh` on first run.

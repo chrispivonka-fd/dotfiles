@@ -3,6 +3,19 @@
 # This won't be added again if you remove it.
 Include ~/.orbstack/ssh/config
 
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+# Machine-specific host aliases (LAN IPs, personal hosts) live in
+# ~/.ssh/config.local — never tracked here. install.sh creates an empty
+# stub on first run; add your own Host blocks to it directly.
+#
+# Must come right after a matching Host block (like "Host *" above), never
+# right after a non-matching one (e.g. "Host github.com"): OpenSSH carries
+# the last Host pattern's match state across an Include, so a non-matching
+# pattern silently suppresses every Host block inside the included file.
+Include ~/.ssh/config.local
+
 Host github.com
   AddKeysToAgent yes
   UseKeychain yes

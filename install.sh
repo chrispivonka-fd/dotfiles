@@ -29,11 +29,14 @@ link_file() {
         return
     fi
 
-    # Something exists at the destination — back it up
+    # Something exists at the destination — back it up, mirroring its path
+    # under $HOME so two dsts sharing a basename (e.g. two settings.json)
+    # can't collide and silently abort the backup mid-run.
     if [ -e "$dst" ] || [ -L "$dst" ]; then
-        mkdir -p "$BACKUP_DIR"
-        mv "$dst" "$BACKUP_DIR/$(basename "$dst")"
-        warn "Backed up existing $dst → $BACKUP_DIR/"
+        local backup_dst="$BACKUP_DIR${dst#"$HOME"}"
+        mkdir -p "$(dirname "$backup_dst")"
+        mv "$dst" "$backup_dst"
+        warn "Backed up existing $dst → $backup_dst"
     fi
 
     # Ensure parent directory exists
@@ -379,6 +382,35 @@ EOF
 }
 
 # -----------------------------------------------------------------------------
+# Create ~/.ssh/config.local stub (machine-specific host aliases — LAN IPs,
+# personal hosts — never tracked; included by ssh/config)
+# -----------------------------------------------------------------------------
+setup_ssh_config_local() {
+    local ssh_local="$HOME/.ssh/config.local"
+    if [ -f "$ssh_local" ]; then
+        info "~/.ssh/config.local already exists, skipping"
+        return
+    fi
+
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    cat > "$ssh_local" <<'EOF'
+# Local SSH host aliases — not tracked in dotfiles repo
+# Add machine-specific Host blocks here (LAN IPs, personal servers, etc.)
+
+# Example:
+# Host myserver
+#   HostName 192.168.1.10
+#   User me
+#   IdentityFile ~/.ssh/myserver
+#   IdentitiesOnly yes
+EOF
+    chmod 600 "$ssh_local"
+
+    success "Created ~/.ssh/config.local"
+}
+
+# -----------------------------------------------------------------------------
 # Setup ~/.ssh/allowed_signers (required for SSH commit signing via 1Password)
 # -----------------------------------------------------------------------------
 setup_allowed_signers() {
@@ -624,6 +656,7 @@ main() {
     setup_gitconfig_local
     setup_zshrc_local
     setup_tmux_local
+    setup_ssh_config_local
     # Create symlinks (activates .gitconfig.local via the include directive)
     create_symlinks
 
