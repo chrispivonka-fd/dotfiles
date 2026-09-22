@@ -24,7 +24,9 @@ exec zsh
 
 Safe to run multiple times (idempotent).
 
-> **Terminal font:** These dotfiles target Warp and Terminal.app. Select a Nerd Font (MesloLGS, JetBrains Mono, or Fira Code — all installed by `install.sh`) in the terminal's font preferences.
+> **Terminal.app:** `install.sh` installs and activates a "GitHub Dark" profile (MesloLGS Nerd Font Mono, matching background/ANSI palette, blinking bar cursor) as the default and startup profile — see `terminal/GitHub Dark.terminal` and `bin/setup-terminal-theme`. Quit and reopen Terminal.app afterward; a running instance caches its prefs and won't pick up the full palette/cursor until restarted.
+>
+> **Warp:** not automated yet — pick a Nerd Font (MesloLGS, JetBrains Mono, or Fira Code — all installed by `install.sh`) and a dark theme manually in Warp's settings.
 
 ---
 
@@ -543,7 +545,10 @@ dotfiles/
 ├── bin/
 │   ├── tmux-sessionizer    # -> ~/.local/bin/tmux-sessionizer
 │   ├── op-ssh-sign         # -> ~/.local/bin/op-ssh-sign (portable 1Password signing shim)
-│   └── render-aws-config   # -> ~/.local/bin/render-aws-config (renders aws/config.tpl via `op inject`)
+│   ├── render-aws-config   # -> ~/.local/bin/render-aws-config (renders aws/config.tpl via `op inject`)
+│   └── setup-terminal-theme # Installs terminal/GitHub Dark.terminal into Terminal.app (macOS)
+├── terminal/
+│   └── GitHub Dark.terminal # Terminal.app profile: palette, MesloLGS Nerd Font Mono, bar cursor
 ├── zsh/
 │   ├── .zshrc              # -> ~/.zshrc
 │   └── aliases.zsh         # Sourced from .zshrc

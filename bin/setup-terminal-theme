@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Install the tracked "GitHub Dark" Terminal.app profile and make it the
+default + startup profile. Not scriptable via AppleScript (Terminal's
+dictionary only exposes background/text/cursor color and font — not the
+16-color ANSI palette or cursor shape/blink), so this edits
+~/Library/Preferences/com.apple.Terminal.plist directly instead.
+
+Safe to run multiple times. macOS only.
+"""
+import plistlib
+import sys
+from pathlib import Path
+
+PROFILE_NAME = "GitHub Dark"
+DOTFILES_DIR = Path(__file__).resolve().parent.parent
+SOURCE = DOTFILES_DIR / "terminal" / f"{PROFILE_NAME}.terminal"
+PREFS = Path.home() / "Library/Preferences/com.apple.Terminal.plist"
+
+
+def main() -> int:
+    if not SOURCE.exists():
+        print(f"[err] {SOURCE} not found", file=sys.stderr)
+        return 1
+
+    with SOURCE.open("rb") as f:
+        profile = plistlib.load(f)
+
+    if PREFS.exists():
+        with PREFS.open("rb") as f:
+            prefs = plistlib.load(f)
+    else:
+        prefs = {}
+
+    prefs.setdefault("Window Settings", {})[PROFILE_NAME] = profile
+    prefs["Default Window Settings"] = PROFILE_NAME
+    prefs["Startup Window Settings"] = PROFILE_NAME
+
+    PREFS.parent.mkdir(parents=True, exist_ok=True)
+    with PREFS.open("wb") as f:
+        plistlib.dump(prefs, f, fmt=plistlib.FMT_BINARY)
+
+    print(f"[ok]   Installed '{PROFILE_NAME}' Terminal.app profile as default + startup")
+    print("[info] Quit and reopen Terminal.app to see the full palette and cursor style")
+    print("[info] (a running Terminal.app caches prefs in memory, so it won't pick up")
+    print("       everything until it's restarted)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -121,6 +121,26 @@ install_packages_macos() {
 }
 
 # -----------------------------------------------------------------------------
+# Install the "GitHub Dark" Terminal.app profile (macOS only). Terminal's
+# AppleScript dictionary can't set the ANSI palette or cursor shape/blink, so
+# bin/setup-terminal-theme edits ~/Library/Preferences/com.apple.Terminal.plist
+# directly. Depends on the Nerd Fonts installed above.
+# -----------------------------------------------------------------------------
+setup_terminal_theme_macos() {
+    if ! command_exists python3; then
+        warn "python3 not found, skipping Terminal.app theme setup"
+        return
+    fi
+
+    info "Installing 'GitHub Dark' Terminal.app profile..."
+    if "$DOTFILES_DIR/bin/setup-terminal-theme"; then
+        success "Terminal.app theme installed (restart Terminal.app to see it fully)"
+    else
+        warn "Terminal.app theme setup failed"
+    fi
+}
+
+# -----------------------------------------------------------------------------
 # Package installation — Debian/Ubuntu
 # -----------------------------------------------------------------------------
 install_packages_debian() {
@@ -648,6 +668,7 @@ main() {
     # Install packages
     if [ "$OS" = "macos" ]; then
         install_packages_macos
+        setup_terminal_theme_macos
     else
         install_packages_debian
     fi
