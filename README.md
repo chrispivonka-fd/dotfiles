@@ -1,627 +1,163 @@
-# dotfiles
+# Work dotfiles
 
-Modern developer environment configuration for macOS and Ubuntu/Debian.
+Public, macOS-only dotfiles for a work development machine. This fork shares
+its roots with the personal dotfiles but is free to diverge where enterprise
+requirements differ—most notably, it uses Colima instead of OrbStack.
 
-## Install
+The repository contains only portable configuration, placeholders, and tool
+manifests. Internal hostnames, account names, project paths, private package
+feeds, AWS profiles, credentials, and real 1Password references belong in
+ignored local files.
 
-```bash
-git clone https://github.com/YOUR_USER/dotfiles.git ~/dotfiles
-cd ~/dotfiles
+## Bootstrap
+
+Review the proposed changes first:
+
+```sh
+git clone git@github.com:chrispivonka-fd/dotfiles_.git ~/GitHub/dotfiles_
+cd ~/GitHub/dotfiles_
+./install.sh --dry-run
+```
+
+Then apply them:
+
+```sh
 ./install.sh
 exec zsh
 ```
 
-**New to these tools?** Check out the [Modern CLI Mastery Guide](GUIDE.md) for tips and shortcuts!
+Useful installer options:
 
-## The install script:
-1. Detects your OS (macOS or Ubuntu/Debian)
-2. Installs all tools via Homebrew or apt
-3. Installs Nerd Fonts (MesloLGS, JetBrains Mono, Fira Code)
-4. Extracts your existing git identity to `~/.gitconfig.local`
-5. Backs up existing dotfiles to `~/.dotfiles_backup/`
-6. Creates symlinks from `~` to the repo, including global git hooks and the `tmux-sessionizer` script
-7. Installs zinit (zsh plugins), TPM (tmux plugins), and lazy.nvim (neovim plugins)
-
-Safe to run multiple times (idempotent).
-
-> **Terminal.app:** `install.sh` installs and activates a "GitHub Dark" profile (MesloLGS Nerd Font Mono, matching background/ANSI palette, blinking bar cursor) as the default and startup profile — see `terminal/GitHub Dark.terminal` and `bin/setup-terminal-theme`. Quit and reopen Terminal.app afterward; a running instance caches its prefs and won't pick up the full palette/cursor until restarted.
->
-> **Warp:** not automated yet — pick a Nerd Font (MesloLGS, JetBrains Mono, or Fira Code — all installed by `install.sh`) and a dark theme manually in Warp's settings.
-
----
-
-## What's Included
-
-| Config | Description |
-|--------|-------------|
-| **zsh** | zinit, autosuggestions, syntax highlighting, fzf-tab fuzzy completion, atuin history, mise runtimes |
-| **git** | Delta pager (GitHub Dark), useful aliases, histogram diffs, auto-rebase, rerere, SSH commit signing via 1Password, global hooks (secret/large-file/conflict-marker/whitespace guards, force-push protection) |
-| **starship** | Fast prompt with GitHub Dark theme, git status, language versions |
-| **tmux** | Mouse, true color, vim keys, TPM, session persistence, fuzzy project sessionizer, GitHub Dark status bar |
-| **neovim** | lazy.nvim, LSP (mason), blink.cmp, snacks.nvim (picker + UI), treesitter, GitHub Dark theme |
-| **claude** | Global Claude Code settings + 15 custom subagents across language, infra, data, dev-experience, and quality categories |
-| **bat** | GitHub Dark theme, line numbers + change markers |
-| **lazygit** | GitHub Dark theme, delta as the diff pager |
-| **editorconfig** | Consistent formatting across editors |
-| **ripgrep** | Smart defaults for code search |
-
-Every themed tool (starship, neovim, bat, delta, fzf, lazygit, tmux, eza) uses the same **GitHub Dark** palette for a consistent look end to end.
-
-## Tools Installed
-
-### Modern CLI Replacements
-
-| Classic | Modern | Purpose |
-|---------|--------|---------|
-| `ls` | [eza](https://github.com/eza-community/eza) | File listing with icons, git status, GitHub Dark colors |
-| `cat` | [bat](https://github.com/sharkdp/bat) | Syntax-highlighted file viewing |
-| `grep` | [ripgrep](https://github.com/BurntSushi/ripgrep) | Fast recursive code search |
-| `find` | [fd](https://github.com/sharkdp/fd) | Fast, user-friendly file finding |
-| `cd` | [zoxide](https://github.com/ajeetdsouza/zoxide) | Smart directory jumping (learns your habits) |
-| `diff` | [delta](https://github.com/dandavison/delta) | Beautiful side-by-side git diffs |
-| `top` | [htop](https://github.com/htop-dev/htop) | Interactive process viewer |
-| `du` | [ncdu](https://dev.yorhel.nl/ncdu) | Interactive disk usage analyzer |
-| `curl` | [httpie](https://httpie.io/) | Human-friendly HTTP client |
-
-### Dev & Productivity Tools
-
-| Tool | Purpose | Quick Example |
-|------|---------|---------------|
-| [fzf](https://github.com/junegunn/fzf) | Fuzzy finder for everything | `Ctrl+R` to search history |
-| [lazygit](https://github.com/jesseduffield/lazygit) | Terminal UI for git | `lg` to launch |
-| [OrbStack](https://orbstack.dev/) (macOS) / Docker Engine (Linux) | Container runtime | `docker`/`dc` aliases |
-| [lazydocker](https://github.com/jesseduffield/lazydocker) | Terminal UI for Docker | `ld` to launch |
-| [starship](https://starship.rs/) | Cross-shell prompt | Automatic -- shows git, languages |
-| [jq](https://jqlang.github.io/jq/) | JSON processor | `curl api \| jq '.data'` |
-| [yq](https://github.com/mikefarah/yq) | YAML/TOML processor | `yq '.key' file.yaml` |
-| [tldr](https://tldr.sh/) | Simplified man pages | `tldr tar` |
-| [tree](https://linux.die.net/man/1/tree) | Directory tree view | `tree -L 2` |
-| [shellcheck](https://www.shellcheck.net/) | Shell script linter | `shellcheck script.sh` |
-| [gh](https://cli.github.com/) | GitHub CLI | `gh pr create` |
-| [mise](https://mise.jdx.dev/) | Per-project runtime version manager | `mise use node@22` |
-| [gitleaks](https://github.com/gitleaks/gitleaks) | Secret scanner, wired into global pre-commit + pre-push hooks | Blocks commits/pushes containing keys/tokens |
-| [1Password CLI](https://developer.1password.com/docs/cli/) | SSH agent + secrets from the terminal | `op signin` |
-| [yazi](https://github.com/sxyazi/yazi) | Terminal file manager with image previews | `y` (cd's your shell to wherever you exit) |
-| [bottom](https://github.com/ClementTsang/bottom) | Modern graphing process viewer | `top` (aliased, replaces htop) |
-
----
-
-## Cheatsheets
-
-### Shell Aliases
-
-#### File Listing (eza)
-```
-ls        File list with icons
-ll        Long list with git status
-la        All files including hidden
-lt        Tree view (2 levels)
-lt3       Tree view (3 levels)
-lS        Sort by size (largest first)
-lm        Sort by modified date
+```text
+--dry-run    print changes without applying them
+--skip-apps  skip Homebrew casks and Mac App Store apps
+--no-update  skip brew update
 ```
 
-#### Git
-```
-gs        git status
-gss       git status -s (short)
-ga        git add
-gaa       git add --all
-gap       git add -p (interactive)
-gc        git commit
-gcm MSG   git commit -m MSG
-gca       git commit --amend
-gcan      git commit --amend --no-edit
-gd        git diff
-gds       git diff --staged
-gdw       git diff --word-diff
-gl        git log (short, graph, 20 lines)
-gla       git log --all
-glp       git log (pretty, with author + date)
-gp        git push
-gpf       git push --force-with-lease
-gpl       git pull
-gplr      git pull --rebase
-gb        git branch
-gba       git branch -a (all)
-gbd       git branch -d (delete)
-gco       git checkout
-gcb       git checkout -b (new branch)
-gsw       git switch
-gswc      git switch -c (new branch)
-gst       git stash
-gstp      git stash pop
-gstl      git stash list
-gf        git fetch --all --prune
-grb       git rebase
-grbi      git rebase -i
-grbc      git rebase --continue
-grba      git rebase --abort
-gcp       git cherry-pick
-gbl       git blame
-gwip      Stage all + commit "WIP"
-gunwip    Undo last WIP commit
-gtags     List tags (newest first)
-gclean    Remove untracked files
-lg        lazygit
-ld        lazydocker
-ghpr      gh pr create
-ghprv     gh pr view --web
-ghprs     gh pr status
-ghis      gh issue list
-leakscan  Manually scan the working tree for secrets (gitleaks)
+Existing managed files are moved to a timestamped directory under
+`~/.dotfiles-backups/` before symlinks are created. The installer is intended
+to be safe to rerun. It does not start Colima or change Terminal.app/Warp
+defaults automatically.
+
+## Public versus local configuration
+
+The installer creates these ignored files from sanitized examples when they
+do not already exist:
+
+| Local file | Purpose |
+| --- | --- |
+| `~/.zshrc.local` | Private paths, aliases, profile names, and environment setup |
+| `~/.gitconfig.local` | Work identity and SSH signing public key |
+| `~/.ssh/config.local` | Internal SSH hosts and connection details |
+| `~/.tmux.conf.local` | Machine-specific tmux overrides |
+| `~/.config/dotfiles/secrets.env` | 1Password references, never secret values |
+| `~/.config/dotfiles/hooks.local/` | Private, optional hook extensions |
+
+Long-lived secrets and SSH private keys belong in 1Password. A local secrets
+file should contain references such as `op://VAULT/ITEM/FIELD`, not resolved
+values. Inject them only into the process that needs them:
+
+```sh
+op run --env-file="$HOME/.config/dotfiles/secrets.env" -- your-command
 ```
 
-#### Git Hooks
+AWS profiles and provider-native sessions remain local. This repository does
+not render or track `~/.aws/config` or `~/.aws/credentials`.
 
-Global (`core.hooksPath = ~/.githooks`), so they apply to **every repo** on this machine, not just this one. Every check can be skipped for a single command with `--no-verify` if it's a false positive.
+## Tool ownership
 
-| Hook | What it blocks |
-|------|-----------------|
-| `pre-commit` | Secrets (gitleaks), files over 5MB, credential-shaped filenames (`.env`, `*.pem`, `id_rsa`, ...), unresolved merge-conflict markers, trailing whitespace |
-| `commit-msg` | Obvious secrets/tokens pasted into the commit message itself |
-| `pre-push` | Force-pushes that rewrite `main`/`master`, secrets in outgoing commits |
-| `post-merge` | Nothing — just reminds you to reinstall deps when a manifest (`package.json`, `Gemfile.lock`, etc.) changed in the pull |
+Each package has one owner to avoid duplicate installations:
 
-#### Docker
-```
-d         docker
-dc        docker compose
-dcu       docker compose up -d
-dcd       docker compose down
-dcr       docker compose restart
-dcl       docker compose logs -f
-dcb       docker compose build
-dps       docker ps
-dpsa      docker ps -a
-di        docker images
-dex       docker exec -it
-dl        docker logs -f
-dprune    docker system prune -af
-dvol      docker volume ls
-```
+- Homebrew formulae: stable macOS command-line applications such as Colima,
+  Docker CLI, Git, shell tools, database clients, linters, and scanners.
+- Homebrew casks: GUI applications and vendor-native macOS tools.
+- Mise: language runtimes, package managers, and portable developer CLIs.
+- Mac App Store: Xcode.
+- Project repositories: project-specific runtime pins and tools such as
+  CSharpier in a .NET tool manifest.
 
-#### Python
-```
-py        python3
-pip       pip3
-venv      python3 -m venv
-activate  Source .venv or venv activate
-pipreq    pip freeze > requirements.txt
-uvs       uv sync
-uva       uv add <package>
-uvr       uv run <cmd>
-uvvenv    uv venv
-uvpi      uv pip install <package>
-```
+The declarative lists live under `packages/`; global runtime policy lives in
+`mise/config.toml`.
 
-#### Node/JS
-```
-ni        npm install
-nr        npm run
-nrd       npm run dev
-nrb       npm run build
-nrt       npm run test
-nrl       npm run lint
-pn        pnpm
-pni       pnpm install
-pnr       pnpm run
-pnd       pnpm run dev
-pnb       pnpm run build
-pnt       pnpm run test
-bi        bun install
-br        bun run
-bd        bun run dev
-bb        bun run build
+## How to use Mise
+
+Mise supplies the latest global fallback versions for interactive work. A
+project's explicit version must win whenever the project has a requirement.
+
+Typical workflow inside a project:
+
+```sh
+# Pin a runtime in the current repository and update its mise.toml.
+mise use node@26
+mise use python@3.15
+
+# Terraform should match the version required by the remote workspace.
+mise use terraform@1.14.0
+
+# Install everything selected by global and project configuration.
+mise install
+
+# See which config selected each active version.
+mise current
+
+# Run with Mise's environment without relying on shell activation.
+mise exec -- terraform version
 ```
 
-#### AWS
-```
-awsp        Switch AWS profile interactively (fzf)
-awsl        aws-vault exec (this machine's workflow)
-awsls       aws-vault list
-awssso      aws sso login
-awsprofiles aws configure list-profiles
-awsw        aws sts get-caller-identity (who am I?)
-awsregion   Show current AWS_DEFAULT_REGION
-awsprofile  Show current profile
-awsec2      List EC2 instances (table view)
-awss3       aws s3 ls
-awslogs     aws logs tail --follow <group>
-```
+Global `latest` selectors are resolved through the committed Mise lockfile so
+a normal install is repeatable. Refreshing that lockfile is the deliberate
+upgrade step. Project `mise.toml` files should be committed to their own
+repositories. Idiomatic files such as `.nvmrc`, `.python-version`, and
+`.terraform-version` are also honored when present. The global policy waits
+seven days before adopting newly released versions.
 
-#### Networking
-```
-myip      Public IP address
-localip   Local/LAN IP address
-ports     Show listening ports
-ping      Ping (5 packets)
-headers   Fetch HTTP headers
-flush     Flush DNS cache (macOS)
+## Containers and databases
+
+Colima provides the local container runtime:
+
+```sh
+colima start
+docker version
+colima stop
 ```
 
-#### Utilities
-```
-path      Print $PATH one per line
-reload    Reload .zshrc
-cls / c   Clear terminal
-h         History
-hg TERM   Search history for TERM
-j         List background jobs
-weather   Current weather
-week      Current week number
-timestamp Unix timestamp
-uuid      Generate a UUID
-json      Pretty-print JSON (pipe into it)
-serve     Start HTTP server on :8000
-sha256    SHA-256 checksum
-sizeof    Size of file/directory
-count     Count files in current dir
-ext       File extension statistics
-urlencode Encode a URL string
-urldecode Decode a URL string
-clip      Copy to clipboard
-paste     Paste from clipboard
-```
+This repository intentionally has no active root devcontainer. Reusable
+templates live under `templates/devcontainers/`:
 
-#### Process Management
-```
-psg TERM  Search running processes
-memhogs   Top 10 memory consumers
-cpuhogs   Top 10 CPU consumers
-```
+- `base/` provides .NET 10, Node 26, Python 3.15, Terraform, AWS CLI, and
+  GitHub CLI.
+- `databases/compose.yaml` provides opt-in PostgreSQL, MongoDB, and Redis bound
+  to localhost with disposable local credentials.
 
-#### Compression
-```
-targz     Create .tar.gz archive
-untargz   Extract .tar.gz archive
-tarls     List .tar.gz contents
-```
+Copy only the pieces a project needs, then pin that project's versions.
 
-#### Config Editing
-```
-zshrc     Edit ~/.zshrc
-gitconf   Edit ~/.gitconfig
-aliases   Edit aliases.zsh + auto-reload
-tmuxconf  Edit ~/.tmux.conf
-vimrc     Edit nvim config
-```
+## Daily entry points
 
-#### Safety
-```
-rm        Prompts before delete (rm -i)
-cp        Prompts before overwrite (cp -i)
-mv        Prompts before overwrite (mv -i)
-```
+- `gcm "type(scope): summary"` commits with an explicit message; the global Git
+  hooks run shared safety checks.
+- `lg` opens Lazygit and `ld` opens Lazydocker.
+- `ts` opens the tmux project sessionizer.
+- `Ctrl-R` uses Atuin's local-only searchable shell history.
+- `awsp` selects an already-local AWS profile.
+- `leakscan` scans the current working tree with Gitleaks.
+- SQLFluff defaults to PostgreSQL; SQL Server projects should override the
+  dialect to `tsql` in their project-local `.sqlfluff`.
 
----
+Global hooks require accurate Conventional Commit headers and run staged-file,
+secret, whitespace, large-file, and protected-branch checks. See
+[`docs/GIT-HOOKS.md`](docs/GIT-HOOKS.md) for types, examples, local extensions,
+and the test command.
 
-### FZF (Fuzzy Finder)
+Starship is the prompt; Zinit manages Zsh plugins. They serve different roles
+and are intentionally used together.
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+T` | Search files (insert path) |
-| `Alt+C` | Search directories (cd into it) |
-| `**<Tab>` | Fuzzy completion (e.g., `vim **<Tab>`) |
-| `<Tab>` | fzf-tab fuzzy menu for any completion (cd, kill, git checkout, etc.) |
+Claude Code receives a deliberately small set of specialized work agents for
+AWS, Terraform, containers, .NET, TypeScript/React/Next.js, Python, Go, Rust,
+PostgreSQL, and MongoDB. The installer links only these public, provider-safe
+prompts into `~/.claude/agents`.
 
----
+## Terminal appearance
 
-### Mise (Runtime Versions)
-
-| Command | Action |
-|---------|--------|
-| `mu node@22` (`mise use`) | Pin Node 22 for the current project (writes `mise.toml`) |
-| `mi` (`mise install`) | Install versions pinned in `mise.toml`/`.tool-versions` |
-| `mr <task>` (`mise run`) | Run a task defined in `mise.toml` |
-| `mise ls` | List installed runtime versions |
-| `mise doctor` | Diagnose activation/shims issues |
-
----
-
-### Zoxide (Smart cd)
-
-| Command | Action |
-|---------|--------|
-| `z foo` | Jump to most-used dir matching "foo" |
-| `z foo bar` | Jump to dir matching "foo" and "bar" |
-| `zi` | Interactive selection with fzf |
-| `z -` | Go back to previous directory |
-
----
-
-### Tmux (prefix = Ctrl-a)
-
-#### Sessions
-| Key | Action |
-|-----|--------|
-| `tmux` | Start new session |
-| `tmux new -s name` | Named session |
-| `tmux ls` | List sessions |
-| `tmux a -t name` | Attach to session |
-| `prefix + d` | Detach |
-| `prefix + $` | Rename session |
-| `prefix + f` | Fuzzy-jump between `~/GitHub` projects (creates/switches session via `tmux-sessionizer`; override the search paths with `TMUX_SESSIONIZER_PATHS="~/GitHub ~/work"`) |
-| `ts` (shell alias) | Same sessionizer, usable from outside tmux too — starts/attaches a session |
-
-#### Windows
-| Key | Action |
-|-----|--------|
-| `prefix + c` | New window |
-| `prefix + ,` | Rename window |
-| `prefix + n/p` | Next/prev window |
-| `prefix + 0-9` | Switch to window # |
-| `prefix + &` | Close window |
-
-#### Panes
-| Key | Action |
-|-----|--------|
-| `prefix + \|` | Split vertical |
-| `prefix + -` | Split horizontal |
-| `prefix + h/j/k/l` | Navigate panes |
-| `prefix + H/J/K/L` | Resize panes |
-| `prefix + z` | Toggle pane zoom |
-| `prefix + x` | Close pane |
-
-#### Copy Mode (vi keys)
-| Key | Action |
-|-----|--------|
-| `prefix + [` | Enter copy mode |
-| `v` | Start selection |
-| `y` | Copy selection |
-| `q` | Exit copy mode |
-
-#### Plugins
-| Key | Action |
-|-----|--------|
-| `prefix + I` | Install plugins (TPM) |
-| `prefix + U` | Update plugins |
-| `prefix + Ctrl-s` | Save session (resurrect) |
-| `prefix + Ctrl-r` | Restore session (resurrect) |
-
----
-
-### Neovim (leader = Space)
-
-#### Navigation
-| Key | Action |
-|-----|--------|
-| `Ctrl+h/j/k/l` | Move between splits |
-| `Shift+h / Shift+l` | Prev/next buffer |
-| `<leader>bd` | Delete buffer |
-| `<leader>e` | Toggle file explorer |
-| `<leader>E` | Reveal current file in explorer |
-
-#### Finding (Snacks.picker)
-| Key | Action |
-|-----|--------|
-| `<leader>ff` | Find files |
-| `<leader>fg` | Live grep (search in files) |
-| `<leader>fb` | Open buffers |
-| `<leader>fh` | Help tags |
-| `<leader>fr` | Recent files |
-| `<leader>fd` | Diagnostics |
-| `<leader>fs` | Git status |
-| `<leader>fc` | Git commits |
-| `<leader>ft` | Find TODOs |
-| `<leader>fw` | Search word under cursor |
-| `<leader>fk` | Keymaps |
-| `<leader>fp` | Projects |
-| `<leader>/` | Search in current buffer |
-
-#### LSP (when attached)
-| Key | Action |
-|-----|--------|
-| `gd` | Go to definition |
-| `gr` | Find references |
-| `gi` | Go to implementation |
-| `K` | Hover documentation |
-| `<leader>ca` | Code action |
-| `<leader>rn` | Rename symbol |
-| `<leader>D` | Type definition |
-| `<leader>ds` | Document symbols |
-| `[d` / `]d` | Prev/next diagnostic |
-| `<leader>d` | Show diagnostic float |
-
-#### Git (Gitsigns + Snacks)
-| Key | Action |
-|-----|--------|
-| `]h` / `[h` | Next/prev hunk |
-| `<leader>hs` | Stage hunk |
-| `<leader>hr` | Reset hunk |
-| `<leader>hS` | Stage entire buffer |
-| `<leader>hu` | Undo stage hunk |
-| `<leader>hp` | Preview hunk |
-| `<leader>hb` | Blame line |
-| `<leader>hd` | Diff this |
-| `<leader>tb` | Toggle inline blame |
-| `<leader>gg` | Open lazygit (floating) |
-| `<leader>gB` | Open current file/line in GitHub |
-
-#### Terminal & UI
-| Key | Action |
-|-----|--------|
-| `<leader>tt` | Toggle floating terminal |
-| `<leader>tz` | Toggle zen mode |
-| `<leader>f` | Format buffer (`conform.nvim`) |
-
-#### Editing
-| Key | Action |
-|-----|--------|
-| `gcc` | Toggle line comment |
-| `gc` (visual) | Toggle block comment |
-| `ys{motion}{char}` | Add surround (e.g., `ysiw"`) |
-| `ds{char}` | Delete surround |
-| `cs{old}{new}` | Change surround |
-| `<` / `>` (visual) | Indent (keeps selection) |
-| `Alt+j` / `Alt+k` | Move line up/down |
-| `jk` | Exit insert mode |
-
-#### Text Objects (Treesitter)
-| Key | Action |
-|-----|--------|
-| `af` / `if` | Around/inside function |
-| `ac` / `ic` | Around/inside class |
-| `aa` / `ia` | Around/inside argument |
-| `]f` / `[f` | Next/prev function |
-| `]c` / `[c` | Next/prev class |
-
-#### Other
-| Key | Action |
-|-----|--------|
-| `<leader>w` | Save file |
-| `<leader>q` | Quit |
-| `<leader>Q` | Force quit all |
-| `<leader>va` | Select all |
-| `Ctrl+d/u` | Scroll down/up (centered) |
-| `Esc` | Clear search highlight |
-
----
-
-### Tool Quick Reference
-
-#### jq (JSON)
-```bash
-cat data.json | jq '.'                # Pretty-print
-cat data.json | jq '.key'             # Extract key
-cat data.json | jq '.items[0]'        # First array element
-cat data.json | jq '.items | length'  # Array length
-cat data.json | jq '.[] | .name'      # Map over array
-curl -s api | jq -r '.data.url'       # Raw output (no quotes)
-```
-
-#### yq (YAML)
-```bash
-yq '.key' file.yaml                   # Extract key
-yq '.items[0].name' file.yaml         # Nested access
-yq -i '.key = "value"' file.yaml      # Edit in place
-yq eval-all 'select(.kind == "Pod")' *.yaml  # Filter
-```
-
-#### httpie
-```bash
-http GET example.com/api              # GET request
-http POST example.com/api key=value   # POST JSON
-http -f POST example.com form=data    # POST form
-http -d example.com/file.zip          # Download
-http --headers example.com            # Headers only
-```
-
-#### ripgrep (rg)
-```bash
-rg pattern                            # Search recursively
-rg -i pattern                         # Case-insensitive
-rg -l pattern                         # Files only (no content)
-rg -t py pattern                      # Only Python files
-rg -g '*.js' pattern                  # Glob filter
-rg --replace 'new' 'old'             # Preview replacements
-rg -C 3 pattern                       # 3 lines context
-```
-
-#### fd
-```bash
-fd pattern                            # Find files matching pattern
-fd -e py                              # Find by extension
-fd -t d                               # Directories only
-fd -t f -x chmod 644                  # Execute on results
-fd -H pattern                         # Include hidden files
-fd pattern /path                      # Search specific path
-```
-
-#### tldr
-```bash
-tldr tar                              # Quick examples for tar
-tldr git-rebase                       # Git subcommands use dashes
-tldr --update                         # Update local cache
-```
-
----
-
-## Repo Structure
-
-```
-dotfiles/
-├── install.sh              # Bootstrap + install script (macOS & Linux)
-├── bin/
-│   ├── tmux-sessionizer    # -> ~/.local/bin/tmux-sessionizer
-│   ├── op-ssh-sign         # -> ~/.local/bin/op-ssh-sign (portable 1Password signing shim)
-│   ├── render-aws-config   # -> ~/.local/bin/render-aws-config (renders aws/config.tpl via `op inject`)
-│   └── setup-terminal-theme # Installs terminal/GitHub Dark.terminal into Terminal.app (macOS)
-├── terminal/
-│   └── GitHub Dark.terminal # Terminal.app profile: palette, MesloLGS Nerd Font Mono, bar cursor
-├── zsh/
-│   ├── .zshrc              # -> ~/.zshrc
-│   └── aliases.zsh         # Sourced from .zshrc
-├── git/
-│   ├── .gitconfig          # -> ~/.gitconfig
-│   ├── .gitignore_global   # -> ~/.gitignore_global
-│   └── hooks/              # -> ~/.githooks (core.hooksPath, applies to every repo)
-│       ├── pre-commit      # gitleaks, large-file guard, secret-filename guard,
-│       │                   # conflict-marker guard, whitespace check
-│       ├── commit-msg      # blocks obvious secrets/tokens pasted into the message
-│       ├── pre-push        # blocks force-push to main/master, gitleaks scan
-│       └── post-merge      # reminds you to reinstall deps after a manifest changes
-├── starship/
-│   └── starship.toml       # -> ~/.config/starship.toml
-├── tmux/
-│   └── .tmux.conf          # -> ~/.tmux.conf
-├── nvim/                   # -> ~/.config/nvim (directory symlink)
-│   ├── init.lua
-│   ├── lazy-lock.json      # Plugin version pins
-│   └── lua/
-│       ├── options.lua
-│       ├── keymaps.lua
-│       ├── lazy-bootstrap.lua
-│       └── plugins/
-│           ├── snacks.lua      # snacks.nvim (picker + explorer + indent + lazygit + terminal + more)
-│           ├── treesitter.lua
-│           ├── lsp.lua         # mason, blink.cmp, conform.nvim
-│           ├── ui.lua          # github-nvim-theme, lualine, gitsigns, mini.icons
-│           └── editor.lua      # autopairs, which-key, flash, lazydev, todo-comments
-├── mise/
-│   └── config.toml         # -> ~/.config/mise/config.toml
-├── claude/                 # Only the portable, non-sensitive Claude Code
-│   │                       # config — conversation history, sessions, and
-│   │                       # shell snapshots under ~/.claude stay local
-│   ├── settings.json       # -> ~/.claude/settings.json
-│   └── agents/             # -> ~/.claude/agents (directory symlink)
-│       ├── language-specialists/    # golang-pro, rust-engineer, python-pro,
-│       │                            # typescript-pro, nextjs-developer, react-specialist
-│       ├── infrastructure/          # docker-expert, terraform-engineer, cloud-architect
-│       ├── data-ai/                 # postgres-pro
-│       ├── developer-experience/    # git-workflow-manager, cli-developer, dependency-manager
-│       └── quality-security/        # debugger, test-automator
-├── gemini/
-│   └── settings.json       # -> ~/.gemini/settings.json
-├── ssh/
-│   └── config              # -> ~/.ssh/config (shared config + 1Password agent;
-│                           #    includes ~/.ssh/config.local for machine-specific
-│                           #    host aliases — never keys)
-├── aws/
-│   └── config.tpl          # -> rendered to ~/.aws/config via bin/render-aws-config
-│                           #    (account ID lives in 1Password, not here)
-├── bat/
-│   ├── config              # -> ~/.config/bat/config
-│   └── themes/             # -> ~/.config/bat/themes (custom GitHub Dark syntax theme)
-├── lazygit/
-│   └── config.yml          # -> ~/Library/Application Support/lazygit/config.yml (macOS)
-│                           #    or ~/.config/lazygit/config.yml (Linux)
-├── editorconfig/
-│   └── .editorconfig       # -> ~/.editorconfig
-└── ripgrep/
-    └── .ripgreprc           # -> ~/.ripgreprc
-```
-
-
-## Local Overrides
-
-Personal and machine-specific settings are kept in `.local` files (gitignored):
-
-| File | Purpose |
-|------|---------|
-| `~/.gitconfig.local` | Git identity (name, email, signing key, credential helper) |
-| `~/.zshrc.local` | Private exports, API keys, custom PATH |
-| `~/.tmux.local.conf` | Machine-specific tmux settings |
-| `~/.ssh/config.local` | Machine-specific SSH host aliases (LAN IPs, personal hosts) |
-
-Created automatically by `install.sh` on first run.
+The GitHub Dark Terminal.app profile remains in `terminal/` as an optional
+asset. Import it manually if desired. Choose a Nerd Font manually in Warp.
+The installer never changes either terminal's defaults.
