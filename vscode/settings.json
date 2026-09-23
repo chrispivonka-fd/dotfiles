@@ -86,7 +86,12 @@
   "explorer.confirmDelete": false,
 
   // --- Extensions ---
+  "extensions.autoCheckUpdates": false,
+  "extensions.autoUpdate": "off",
   "extensions.ignoreRecommendations": true,
-  "projectManager.git.baseFolders": ["~//GitHub"],
-  "workbench.startupEditor": "none",
+  "microsoft-authentication.implementation": "msal-no-broker",
+  "projectManager.git.baseFolders": ["~/GitHub"],
+  "settingsSync.ignoredExtensions": ["typescriptteam.native-preview"],
+  "todo-tree.ripgrep.ripgrep": "__DOTFILES_RIPGREP__",
+  "workbench.startupEditor": "none"
 }

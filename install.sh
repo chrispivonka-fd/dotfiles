@@ -68,7 +68,7 @@ link_file() {
   local src="$1"
   local dst="$2"
 
-  if [ ! -e "$src" ] && [ ! -L "$src" ]; then
+  if ! $DRY_RUN && [ ! -e "$src" ] && [ ! -L "$src" ]; then
     error "Cannot link missing source: $src"
     exit 1
   fi
@@ -102,6 +102,43 @@ copy_local_template() {
   run mkdir -p "$(dirname "$dst")"
   run install -m "$mode" "$src" "$dst"
   warn "Created $dst from a sanitized template; review its placeholders."
+}
+
+setup_vscode_settings() {
+  local shared_settings="$HOME/.config/dotfiles/vscode-settings.json"
+  local stable_settings="$HOME/Library/Application Support/Code/User/settings.json"
+  local insiders_settings="$HOME/Library/Application Support/Code - Insiders/User/settings.json"
+  local backup_settings="$BACKUP_DIR/.config/dotfiles/vscode-settings.json"
+  local rendered_settings
+  local ripgrep_path
+
+  ripgrep_path="$(brew --prefix ripgrep)/bin/rg"
+  if ! $DRY_RUN && [ ! -x "$ripgrep_path" ]; then
+    error "Homebrew ripgrep executable is unavailable: $ripgrep_path"
+    exit 1
+  fi
+
+  if $DRY_RUN; then
+    info "Would render shared VS Code settings with ripgrep at $ripgrep_path"
+  else
+    rendered_settings="$(mktemp)"
+    sed -e "s|__DOTFILES_RIPGREP__|$ripgrep_path|" \
+      "$DOTFILES_DIR/vscode/settings.json" > "$rendered_settings"
+
+    if [ -e "$shared_settings" ] && ! cmp -s "$rendered_settings" "$shared_settings"; then
+      mkdir -p "$(dirname "$backup_settings")"
+      cp -p "$shared_settings" "$backup_settings"
+      warn "Backed up $shared_settings to $backup_settings"
+    fi
+
+    mkdir -p "$(dirname "$shared_settings")"
+    install -m 600 "$rendered_settings" "$shared_settings"
+    rm -f "$rendered_settings"
+  fi
+  success "Rendered shared local VS Code settings: $shared_settings"
+
+  link_file "$shared_settings" "$stable_settings"
+  link_file "$shared_settings" "$insiders_settings"
 }
 
 install_homebrew() {
@@ -199,7 +236,7 @@ create_symlinks() {
   link_file "$DOTFILES_DIR/atuin/config.toml" "$HOME/.config/atuin/config.toml"
   link_file "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/settings.json"
   link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
-  link_file "$DOTFILES_DIR/vscode/settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+  setup_vscode_settings
   link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"
   link_file "$DOTFILES_DIR/bin/op-ssh-sign" "$HOME/.local/bin/op-ssh-sign"
 
@@ -269,14 +306,60 @@ install_shell_and_editor_plugins() {
 }
 
 install_vscode_extensions() {
-  if ! command_exists code; then
-    warn "VS Code's code command is unavailable; skipping extensions."
+  local insiders_cli="/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code"
+  local -a labels=()
+  local -a clis=()
+
+  if command_exists code; then
+    labels+=("stable")
+    clis+=("$(command -v code)")
+  fi
+  if [ -x "$insiders_cli" ]; then
+    labels+=("insiders")
+    clis+=("$insiders_cli")
+  fi
+
+  if [ "${#clis[@]}" -eq 0 ]; then
+    warn "VS Code CLIs are unavailable; skipping extensions."
     return
   fi
 
-  while IFS= read -r extension; do
-    run code --install-extension "$extension" --force
-  done < <(manifest_entries "$DOTFILES_DIR/vscode/extensions.txt")
+  local index label cli inventory extension extension_id installed_version
+  for index in "${!clis[@]}"; do
+    label="${labels[$index]}"
+    cli="${clis[$index]}"
+    inventory="$BACKUP_DIR/vscode-extensions-$label.txt"
+
+    if $DRY_RUN; then
+      info "Would back up the $label VS Code extension inventory to $inventory"
+    else
+      mkdir -p "$BACKUP_DIR"
+      "$cli" --list-extensions --show-versions | sort > "$inventory"
+    fi
+
+    while IFS= read -r extension; do
+      extension_id="${extension%%@*}"
+      installed_version="$(
+        "$cli" --list-extensions --show-versions |
+          awk -F@ -v id="$extension_id" 'tolower($1) == tolower(id) { print $2; exit }'
+      )"
+      if [ "$installed_version" = "${extension#*@}" ]; then
+        success "$label extension already pinned: $extension"
+      else
+        run "$cli" --install-extension "$extension" --force
+      fi
+    done < <(manifest_entries "$DOTFILES_DIR/vscode/extensions.txt")
+
+    while IFS= read -r extension_id; do
+      if ! manifest_entries "$DOTFILES_DIR/vscode/extensions.txt" |
+        cut -d@ -f1 |
+        grep -Fxiq "$extension_id"; then
+        if "$cli" --list-extensions | grep -Fxiq "$extension_id"; then
+          run "$cli" --uninstall-extension "$extension_id"
+        fi
+      fi
+    done < <("$cli" --list-extensions | LC_ALL=C sort -r)
+  done
 }
 
 main() {

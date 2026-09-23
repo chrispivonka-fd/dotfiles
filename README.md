@@ -39,6 +39,15 @@ Existing managed files are moved to a timestamped directory under
 to be safe to rerun. It does not start Colima or change Terminal.app/Warp
 defaults automatically.
 
+VS Code Stable and Insiders share one local settings file under
+`~/.config/dotfiles/`. It is rendered instead of linked to the repository
+because extensions persist machine-specific paths and state there. Both
+channels use the same version-pinned extension manifest, and extension
+auto-updates are disabled to prevent drift. Settings Sync remains available;
+the unmanaged TypeScript Native Preview extension is excluded so sync cannot
+reinstall it over the work manifest. Existing local settings and extension
+inventories are backed up before they are changed.
+
 ## Public versus local configuration
 
 The installer creates these ignored files from sanitized examples when they

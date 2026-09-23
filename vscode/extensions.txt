@@ -1,15 +1,52 @@
-github.github-vscode-theme
-charliermarsh.ruff
-rust-lang.rust-analyzer
-golang.go
-esbenp.prettier-vscode
-dbaeumer.vscode-eslint
-pkief.material-icon-theme
-usernamehw.errorlens
-christian-kohler.path-intellisense
-formulahendry.auto-rename-tag
-ms-azuretools.vscode-docker
-mechatroner.rainbow-csv
-tamasfe.even-better-toml
-redhat.vscode-yaml
-sumneko.lua
+# Appearance and navigation
+github.github-vscode-theme@6.3.5
+pkief.material-icon-theme@5.38.1
+usernamehw.errorlens@3.28.0
+christian-kohler.path-intellisense@2.10.0
+formulahendry.auto-rename-tag@0.1.10
+alefragnani.project-manager@13.1.0
+gruntfuggly.todo-tree@0.0.226
+streetsidesoftware.code-spell-checker@4.9.3
+
+# Shared formats and documentation
+davidanson.vscode-markdownlint@0.62.1
+editorconfig.editorconfig@0.18.2
+mechatroner.rainbow-csv@3.24.1
+tamasfe.even-better-toml@0.21.2
+redhat.vscode-yaml@1.24.0
+sumneko.lua@3.19.1
+
+# Application languages
+esbenp.prettier-vscode@12.4.0
+dbaeumer.vscode-eslint@3.0.34
+ms-python.python@2026.7.2026092301
+ms-python.debugpy@2026.6.0
+ms-python.vscode-pylance@2026.3.105
+ms-python.vscode-python-envs@1.37.2026092301
+charliermarsh.ruff@2026.82.0
+golang.go@0.56.1
+rust-lang.rust-analyzer@0.3.3057
+ms-dotnettools.csdevkit@11.0.2
+ms-dotnettools.csharp@2.160.4
+ms-dotnettools.vscode-dotnet-runtime@3.2.0
+csharpier.csharpier-vscode@11.0.0
+
+# Cloud, infrastructure, and containers
+amazonwebservices.aws-toolkit-vscode@4.15.0
+hashicorp.terraform@2.40.0
+ms-azuretools.vscode-docker@2.0.0
+ms-azuretools.vscode-containers@2.5.2
+ms-vscode-remote.remote-containers@0.470.0
+exiasr.hadolint@1.1.2
+github.vscode-github-actions@0.32.3
+
+# Databases
+mongodb.mongodb-vscode@1.17.1
+ms-ossdata.vscode-pgsql@1.30.1
+ms-mssql.mssql@1.45.1
+ms-mssql.data-workspace-vscode@0.6.3
+ms-mssql.sql-bindings-vscode@0.4.1
+ms-mssql.sql-database-projects-vscode@1.7.0
+
+# AI-assisted development
+anthropic.claude-code@2.1.280
