@@ -4,17 +4,17 @@
 set -euo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=lib/common.sh
+# shellcheck source=git/hooks/lib/common.sh
 source "$HOOK_DIR/lib/common.sh"
 
 if ! command -v gitleaks >/dev/null 2>&1; then
-    hook_error "gitleaks is required for commits; run the dotfiles installer"
-    exit 1
+  hook_error "gitleaks is required for commits; run the dotfiles installer"
+  exit 1
 fi
 
 if ! gitleaks git --staged --no-banner --redact .; then
-    hook_error "staged changes contain a potential secret"
-    exit 1
+  hook_error "staged changes contain a potential secret"
+  exit 1
 fi
 
 max_bytes=$((5 * 1024 * 1024))
@@ -22,24 +22,24 @@ sensitive_pattern='(^|/)(\.env($|\.)|secrets?(\.|$)|credentials($|\.)|id_(rsa|ds
 safe_placeholder_pattern='(^|/)(\.env|secrets\.env|credentials)\.(example|sample|template|dist)$'
 
 while IFS= read -r -d '' file; do
-    size_bytes="$(git cat-file -s ":$file" 2>/dev/null || printf '0')"
-    if [ "$size_bytes" -gt "$max_bytes" ]; then
-        hook_error "$file is larger than 5 MiB; use Git LFS or an artifact store"
-        exit 1
-    fi
+  size_bytes="$(git cat-file -s ":$file" 2>/dev/null || printf '0')"
+  if [ "$size_bytes" -gt "$max_bytes" ]; then
+    hook_error "$file is larger than 5 MiB; use Git LFS or an artifact store"
+    exit 1
+  fi
 
-    if [[ "$file" =~ $safe_placeholder_pattern ]]; then
-        continue
-    fi
-    if [[ "$file" =~ $sensitive_pattern ]]; then
-        hook_error "$file looks like a credential or private-key file"
-        exit 1
-    fi
+  if [[ "$file" =~ $safe_placeholder_pattern ]]; then
+    continue
+  fi
+  if [[ "$file" =~ $sensitive_pattern ]]; then
+    hook_error "$file looks like a credential or private-key file"
+    exit 1
+  fi
 done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 
 if ! git diff --cached --check; then
-    hook_error "staged changes contain whitespace errors or conflict markers"
-    exit 1
+  hook_error "staged changes contain whitespace errors or conflict markers"
+  exit 1
 fi
 
 run_local_hook pre-commit "$@"

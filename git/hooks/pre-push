@@ -3,7 +3,7 @@
 set -euo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=lib/common.sh
+# shellcheck source=git/hooks/lib/common.sh
 source "$HOOK_DIR/lib/common.sh"
 
 zero="0000000000000000000000000000000000000000"
@@ -14,49 +14,49 @@ trap 'rm -f "$updates_file"' EXIT
 tee "$updates_file" >/dev/null
 
 if ! command -v gitleaks >/dev/null 2>&1; then
-    hook_error "gitleaks is required for pushes; run the dotfiles installer"
-    exit 1
+  hook_error "gitleaks is required for pushes; run the dotfiles installer"
+  exit 1
 fi
 
 while read -r local_ref local_sha remote_ref remote_sha; do
-    [ -n "${local_sha:-}" ] || continue
+  [ -n "${local_sha:-}" ] || continue
 
-    case "$remote_ref" in
-        refs/heads/main|refs/heads/master)
-            if [ "$local_sha" = "$zero" ]; then
-                hook_error "refusing to delete protected branch ${remote_ref#refs/heads/}"
-                status=1
-                continue
-            fi
-            if [ "$remote_sha" != "$zero" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
-                hook_error "refusing to rewrite protected branch ${remote_ref#refs/heads/}"
-                status=1
-                continue
-            fi
-            ;;
-    esac
-
-    [ "$local_sha" = "$zero" ] && continue
-
-    if [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
-        log_opts="${remote_sha}..${local_sha}"
-    elif git remote get-url "$1" >/dev/null 2>&1; then
-        log_opts="$local_sha --not --remotes=$1"
-    else
-        log_opts="$local_sha"
-    fi
-
-    hook_info "scanning outgoing ref ${local_ref#refs/heads/}"
-    if ! gitleaks git --no-banner --redact --log-opts="$log_opts" .; then
-        hook_error "outgoing commits for $remote_ref contain a potential secret"
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      if [ "$local_sha" = "$zero" ]; then
+        hook_error "refusing to delete protected branch ${remote_ref#refs/heads/}"
         status=1
-    fi
+        continue
+      fi
+      if [ "$remote_sha" != "$zero" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        hook_error "refusing to rewrite protected branch ${remote_ref#refs/heads/}"
+        status=1
+        continue
+      fi
+      ;;
+  esac
+
+  [ "$local_sha" = "$zero" ] && continue
+
+  if [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    log_opts="${remote_sha}..${local_sha}"
+  elif git remote get-url "$1" >/dev/null 2>&1; then
+    log_opts="$local_sha --not --remotes=$1"
+  else
+    log_opts="$local_sha"
+  fi
+
+  hook_info "scanning outgoing ref ${local_ref#refs/heads/}"
+  if ! gitleaks git --no-banner --redact --log-opts="$log_opts" .; then
+    hook_error "outgoing commits for $remote_ref contain a potential secret"
+    status=1
+  fi
 done < "$updates_file"
 
 local_dir="${DOTFILES_LOCAL_HOOK_DIR:-$HOME/.config/dotfiles/hooks.local}"
 local_hook="$local_dir/pre-push"
 if [ -x "$local_hook" ]; then
-    "$local_hook" "$@" < "$updates_file" || status=1
+  "$local_hook" "$@" < "$updates_file" || status=1
 fi
 
 exit "$status"

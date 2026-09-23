@@ -15,289 +15,289 @@ warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$1"; }
 error() { printf '\033[1;31m[err]\033[0m  %s\n' "$1" >&2; }
 
 usage() {
-    printf '%s\n' \
-        "Usage: ./install.sh [--dry-run] [--skip-apps] [--no-update]" \
-        "" \
-        "  --dry-run    Print changes without applying them" \
-        "  --skip-apps  Skip Homebrew casks and Mac App Store apps" \
-        "  --no-update  Skip brew update"
+  printf '%s\n' \
+    "Usage: ./install.sh [--dry-run] [--skip-apps] [--no-update]" \
+    "" \
+    "  --dry-run    Print changes without applying them" \
+    "  --skip-apps  Skip Homebrew casks and Mac App Store apps" \
+    "  --no-update  Skip brew update"
 }
 
 run() {
-    if $DRY_RUN; then
-        printf '\033[1;36m[dry-run]\033[0m'
-        printf ' %q' "$@"
-        printf '\n'
-    else
-        "$@"
-    fi
+  if $DRY_RUN; then
+    printf '\033[1;36m[dry-run]\033[0m'
+    printf ' %q' "$@"
+    printf '\n'
+  else
+    "$@"
+  fi
 }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 manifest_entries() {
-    sed \
-        -e 's/[[:space:]]*#.*$//' \
-        -e 's/^[[:space:]]*//' \
-        -e 's/[[:space:]]*$//' \
-        -e '/^$/d' \
-        "$1"
+  sed \
+    -e 's/[[:space:]]*#.*$//' \
+    -e 's/^[[:space:]]*//' \
+    -e 's/[[:space:]]*$//' \
+    -e '/^$/d' \
+    "$1"
 }
 
 parse_args() {
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            --dry-run) DRY_RUN=true ;;
-            --skip-apps) SKIP_APPS=true ;;
-            --no-update) NO_UPDATE=true ;;
-            -h|--help) usage; exit 0 ;;
-            *) error "Unknown option: $1"; usage; exit 2 ;;
-        esac
-        shift
-    done
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --dry-run) DRY_RUN=true ;;
+      --skip-apps) SKIP_APPS=true ;;
+      --no-update) NO_UPDATE=true ;;
+      -h|--help) usage; exit 0 ;;
+      *) error "Unknown option: $1"; usage; exit 2 ;;
+    esac
+    shift
+  done
 }
 
 require_macos() {
-    if [ "$(uname -s)" != "Darwin" ]; then
-        error "This work fork supports macOS only."
-        exit 1
-    fi
+  if [ "$(uname -s)" != "Darwin" ]; then
+    error "This work fork supports macOS only."
+    exit 1
+  fi
 }
 
 link_file() {
-    local src="$1"
-    local dst="$2"
+  local src="$1"
+  local dst="$2"
 
-    if [ ! -e "$src" ] && [ ! -L "$src" ]; then
-        error "Cannot link missing source: $src"
-        exit 1
-    fi
+  if [ ! -e "$src" ] && [ ! -L "$src" ]; then
+    error "Cannot link missing source: $src"
+    exit 1
+  fi
 
-    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-        success "Already linked: $dst"
-        return
-    fi
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    success "Already linked: $dst"
+    return
+  fi
 
-    if [ -e "$dst" ] || [ -L "$dst" ]; then
-        local backup_dst="$BACKUP_DIR${dst#"$HOME"}"
-        run mkdir -p "$(dirname "$backup_dst")"
-        run mv "$dst" "$backup_dst"
-        warn "Backed up $dst to $backup_dst"
-    fi
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    local backup_dst="$BACKUP_DIR${dst#"$HOME"}"
+    run mkdir -p "$(dirname "$backup_dst")"
+    run mv "$dst" "$backup_dst"
+    warn "Backed up $dst to $backup_dst"
+  fi
 
-    run mkdir -p "$(dirname "$dst")"
-    run ln -s "$src" "$dst"
+  run mkdir -p "$(dirname "$dst")"
+  run ln -s "$src" "$dst"
 }
 
 copy_local_template() {
-    local src="$1"
-    local dst="$2"
-    local mode="$3"
+  local src="$1"
+  local dst="$2"
+  local mode="$3"
 
-    if [ -e "$dst" ]; then
-        success "Local file already exists: $dst"
-        return
-    fi
+  if [ -e "$dst" ]; then
+    success "Local file already exists: $dst"
+    return
+  fi
 
-    run mkdir -p "$(dirname "$dst")"
-    run install -m "$mode" "$src" "$dst"
-    warn "Created $dst from a sanitized template; review its placeholders."
+  run mkdir -p "$(dirname "$dst")"
+  run install -m "$mode" "$src" "$dst"
+  warn "Created $dst from a sanitized template; review its placeholders."
 }
 
 install_homebrew() {
-    if ! command_exists brew; then
-        info "Installing Homebrew..."
-        if $DRY_RUN; then
-            info "Would download and run the official Homebrew installer."
-            return
-        fi
-
-        local installer
-        installer="$(mktemp)"
-        curl -fsSLo "$installer" https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
-        env NONINTERACTIVE=1 /bin/bash "$installer"
-        rm -f "$installer"
-
-        if [ -x /opt/homebrew/bin/brew ]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -x /usr/local/bin/brew ]; then
-            eval "$(/usr/local/bin/brew shellenv)"
-        fi
+  if ! command_exists brew; then
+    info "Installing Homebrew..."
+    if $DRY_RUN; then
+      info "Would download and run the official Homebrew installer."
+      return
     fi
 
-    if ! $NO_UPDATE; then
-        run brew update
+    local installer
+    installer="$(mktemp)"
+    curl -fsSLo "$installer" https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+    env NONINTERACTIVE=1 /bin/bash "$installer"
+    rm -f "$installer"
+
+    if [ -x /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -x /usr/local/bin/brew ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
     fi
+  fi
 
-    info "Installing Homebrew formulae..."
-    while IFS= read -r package; do
-        if ! brew list --formula "$package" >/dev/null 2>&1; then
-            run brew install "$package"
-        fi
-    done < <(manifest_entries "$DOTFILES_DIR/packages/brew-formulae.txt")
+  if ! $NO_UPDATE; then
+    run brew update
+  fi
 
-    if $SKIP_APPS; then
-        info "Skipping casks and Mac App Store apps."
-        return
+  info "Installing Homebrew formulae..."
+  while IFS= read -r package; do
+    if ! brew list --formula "$package" >/dev/null 2>&1; then
+      run brew install "$package"
     fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/brew-formulae.txt")
 
-    info "Installing Homebrew casks..."
-    while IFS= read -r package; do
-        if ! brew list --cask "$package" >/dev/null 2>&1; then
-            run brew install --cask "$package"
-        fi
-    done < <(manifest_entries "$DOTFILES_DIR/packages/brew-casks.txt")
+  if $SKIP_APPS; then
+    info "Skipping casks and Mac App Store apps."
+    return
+  fi
 
-    if ! command_exists mas; then
-        warn "mas is unavailable; skipping Mac App Store apps."
-        return
+  info "Installing Homebrew casks..."
+  while IFS= read -r package; do
+    if ! brew list --cask "$package" >/dev/null 2>&1; then
+      run brew install --cask "$package"
     fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/brew-casks.txt")
 
-    while IFS= read -r app_id; do
-        if ! mas list | awk '{print $1}' | grep -qx "$app_id"; then
-            if ! run mas install "$app_id"; then
-                warn "Could not install App Store app $app_id; sign in to the App Store and retry."
-            fi
-        fi
-    done < <(manifest_entries "$DOTFILES_DIR/packages/mas-apps.txt")
+  if ! command_exists mas; then
+    warn "mas is unavailable; skipping Mac App Store apps."
+    return
+  fi
+
+  while IFS= read -r app_id; do
+    if ! mas list | awk '{print $1}' | grep -qx "$app_id"; then
+      if ! run mas install "$app_id"; then
+        warn "Could not install App Store app $app_id; sign in to the App Store and retry."
+      fi
+    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/mas-apps.txt")
 }
 
 setup_local_files() {
-    copy_local_template "$DOTFILES_DIR/examples/zshrc.local" "$HOME/.zshrc.local" 600
-    copy_local_template "$DOTFILES_DIR/examples/gitconfig.local" "$HOME/.gitconfig.local" 600
-    copy_local_template "$DOTFILES_DIR/examples/ssh-config.local" "$HOME/.ssh/config.local" 600
-    copy_local_template "$DOTFILES_DIR/examples/tmux.conf.local" "$HOME/.tmux.conf.local" 600
-    copy_local_template "$DOTFILES_DIR/examples/secrets.env.example" "$HOME/.config/dotfiles/secrets.env" 600
+  copy_local_template "$DOTFILES_DIR/examples/zshrc.local" "$HOME/.zshrc.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/gitconfig.local" "$HOME/.gitconfig.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/ssh-config.local" "$HOME/.ssh/config.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/tmux.conf.local" "$HOME/.tmux.conf.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/secrets.env.example" "$HOME/.config/dotfiles/secrets.env" 600
 
-    run mkdir -p "$HOME/.config/dotfiles/hooks.local"
-    run chmod 700 "$HOME/.ssh" "$HOME/.config/dotfiles" "$HOME/.config/dotfiles/hooks.local"
+  run mkdir -p "$HOME/.config/dotfiles/hooks.local"
+  run chmod 700 "$HOME/.ssh" "$HOME/.config/dotfiles" "$HOME/.config/dotfiles/hooks.local"
 
-    if [ ! -e "$HOME/.ssh/allowed_signers" ]; then
-        run touch "$HOME/.ssh/allowed_signers"
-        run chmod 600 "$HOME/.ssh/allowed_signers"
-        warn "Created ~/.ssh/allowed_signers; add the public half of your 1Password signing key."
-    fi
+  if [ ! -e "$HOME/.ssh/allowed_signers" ]; then
+    run touch "$HOME/.ssh/allowed_signers"
+    run chmod 600 "$HOME/.ssh/allowed_signers"
+    warn "Created ~/.ssh/allowed_signers; add the public half of your 1Password signing key."
+  fi
 }
 
 create_symlinks() {
-    info "Linking managed configuration..."
-    link_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
-    link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
-    link_file "$DOTFILES_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
-    link_file "$DOTFILES_DIR/git/hooks" "$HOME/.githooks"
-    link_file "$DOTFILES_DIR/ssh/config" "$HOME/.ssh/config"
-    link_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
-    link_file "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
-    link_file "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
-    link_file "$DOTFILES_DIR/bat/config" "$HOME/.config/bat/config"
-    link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
-    link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
-    link_file "$DOTFILES_DIR/ripgrep/.ripgreprc" "$HOME/.ripgreprc"
-    link_file "$DOTFILES_DIR/editorconfig/.editorconfig" "$HOME/.editorconfig"
-    link_file "$DOTFILES_DIR/sqlfluff/.sqlfluff" "$HOME/.sqlfluff"
-    link_file "$DOTFILES_DIR/mise/config.toml" "$HOME/.config/mise/config.toml"
-    link_file "$DOTFILES_DIR/atuin/config.toml" "$HOME/.config/atuin/config.toml"
-    link_file "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/settings.json"
-    link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
-    link_file "$DOTFILES_DIR/vscode/settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
-    link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"
-    link_file "$DOTFILES_DIR/bin/op-ssh-sign" "$HOME/.local/bin/op-ssh-sign"
+  info "Linking managed configuration..."
+  link_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+  link_file "$DOTFILES_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
+  link_file "$DOTFILES_DIR/git/hooks" "$HOME/.githooks"
+  link_file "$DOTFILES_DIR/ssh/config" "$HOME/.ssh/config"
+  link_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+  link_file "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+  link_file "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
+  link_file "$DOTFILES_DIR/bat/config" "$HOME/.config/bat/config"
+  link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
+  link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+  link_file "$DOTFILES_DIR/ripgrep/.ripgreprc" "$HOME/.ripgreprc"
+  link_file "$DOTFILES_DIR/editorconfig/.editorconfig" "$HOME/.editorconfig"
+  link_file "$DOTFILES_DIR/sqlfluff/.sqlfluff" "$HOME/.sqlfluff"
+  link_file "$DOTFILES_DIR/mise/config.toml" "$HOME/.config/mise/config.toml"
+  link_file "$DOTFILES_DIR/atuin/config.toml" "$HOME/.config/atuin/config.toml"
+  link_file "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/settings.json"
+  link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
+  link_file "$DOTFILES_DIR/vscode/settings.json" "$HOME/Library/Application Support/Code/User/settings.json"
+  link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"
+  link_file "$DOTFILES_DIR/bin/op-ssh-sign" "$HOME/.local/bin/op-ssh-sign"
 
-    if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
-        link_file "$DOTFILES_DIR/mise/mise.lock" "$HOME/.config/mise/mise.lock"
-    fi
-    if [ -d "$DOTFILES_DIR/mise/.mise/locks" ]; then
-        link_file "$DOTFILES_DIR/mise/.mise" "$HOME/.config/mise/.mise"
-    fi
+  if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
+    link_file "$DOTFILES_DIR/mise/mise.lock" "$HOME/.config/mise/mise.lock"
+  fi
+  if [ -d "$DOTFILES_DIR/mise/.mise/locks" ]; then
+    link_file "$DOTFILES_DIR/mise/.mise" "$HOME/.config/mise/.mise"
+  fi
 }
 
 install_mise_tools() {
-    if ! command_exists mise; then
-        warn "mise is unavailable; skipping managed runtimes."
-        return
-    fi
+  if ! command_exists mise; then
+    warn "mise is unavailable; skipping managed runtimes."
+    return
+  fi
 
-    run mise trust -y "$HOME/.config/mise/config.toml"
-    if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
-        # The lock pins every resolved version. Mise's dotnet-tool backend does
-        # not emit artifact URLs, so strict --locked mode cannot install those
-        # entries even though their versions are present in the lockfile.
-        run mise install -y
-    else
-        warn "mise/mise.lock is not present; resolving tools without a lockfile."
-        run mise install -y
-    fi
+  run mise trust -y "$HOME/.config/mise/config.toml"
+  if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
+    # The lock pins every resolved version. Mise's dotnet-tool backend does
+    # not emit artifact URLs, so strict --locked mode cannot install those
+    # entries even though their versions are present in the lockfile.
+    run mise install -y
+  else
+    warn "mise/mise.lock is not present; resolving tools without a lockfile."
+    run mise install -y
+  fi
 }
 
 install_gh_extensions() {
-    if ! command_exists gh || ! gh auth status >/dev/null 2>&1; then
-        warn "GitHub CLI is not authenticated; skipping extensions."
-        return
-    fi
+  if ! command_exists gh || ! gh auth status >/dev/null 2>&1; then
+    warn "GitHub CLI is not authenticated; skipping extensions."
+    return
+  fi
 
-    while IFS= read -r extension; do
-        if ! gh extension list | awk '{print $1}' | grep -qx "$extension"; then
-            run gh extension install "$extension"
-        fi
-    done < <(manifest_entries "$DOTFILES_DIR/packages/gh-extensions.txt")
+  while IFS= read -r extension; do
+    if ! gh extension list | awk '{print $1}' | grep -qx "$extension"; then
+      run gh extension install "$extension"
+    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/gh-extensions.txt")
 }
 
 install_shell_and_editor_plugins() {
-    local zinit_home="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
-    local tpm_dir="$HOME/.tmux/plugins/tpm"
+  local zinit_home="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
+  local tpm_dir="$HOME/.tmux/plugins/tpm"
 
-    if [ ! -d "$zinit_home" ]; then
-        run mkdir -p "$(dirname "$zinit_home")"
-        run git clone https://github.com/zdharma-continuum/zinit.git "$zinit_home"
-    fi
+  if [ ! -d "$zinit_home" ]; then
+    run mkdir -p "$(dirname "$zinit_home")"
+    run git clone https://github.com/zdharma-continuum/zinit.git "$zinit_home"
+  fi
 
-    if [ ! -d "$tpm_dir" ]; then
-        run git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
-    fi
+  if [ ! -d "$tpm_dir" ]; then
+    run git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+  fi
 
-    if [ -x "$tpm_dir/bin/install_plugins" ]; then
-        run "$tpm_dir/bin/install_plugins"
-    fi
+  if [ -x "$tpm_dir/bin/install_plugins" ]; then
+    run "$tpm_dir/bin/install_plugins"
+  fi
 
-    if command_exists nvim; then
-        run nvim --headless "+Lazy! sync" +qa
-    fi
+  if command_exists nvim; then
+    run nvim --headless "+Lazy! sync" +qa
+  fi
 
-    if command_exists bat; then
-        run bat cache --build
-    fi
+  if command_exists bat; then
+    run bat cache --build
+  fi
 }
 
 install_vscode_extensions() {
-    if ! command_exists code; then
-        warn "VS Code's code command is unavailable; skipping extensions."
-        return
-    fi
+  if ! command_exists code; then
+    warn "VS Code's code command is unavailable; skipping extensions."
+    return
+  fi
 
-    while IFS= read -r extension; do
-        run code --install-extension "$extension" --force
-    done < <(manifest_entries "$DOTFILES_DIR/vscode/extensions.txt")
+  while IFS= read -r extension; do
+    run code --install-extension "$extension" --force
+  done < <(manifest_entries "$DOTFILES_DIR/vscode/extensions.txt")
 }
 
 main() {
-    parse_args "$@"
-    require_macos
+  parse_args "$@"
+  require_macos
 
-    info "Bootstrapping the macOS work environment from $DOTFILES_DIR"
-    install_homebrew
-    setup_local_files
-    create_symlinks
-    install_mise_tools
-    install_gh_extensions
-    install_shell_and_editor_plugins
-    install_vscode_extensions
+  info "Bootstrapping the macOS work environment from $DOTFILES_DIR"
+  install_homebrew
+  setup_local_files
+  create_symlinks
+  install_mise_tools
+  install_gh_extensions
+  install_shell_and_editor_plugins
+  install_vscode_extensions
 
-    success "Bootstrap complete."
-    info "Backups, if any, are in $BACKUP_DIR"
-    info "Review the *.local files and ~/.config/dotfiles/secrets.env before use."
-    info "Start Colima when needed with: colima start"
-    info "Terminal.app and Warp appearance remain manual choices."
-    info "Reload the shell with: exec zsh"
+  success "Bootstrap complete."
+  info "Backups, if any, are in $BACKUP_DIR"
+  info "Review the *.local files and ~/.config/dotfiles/secrets.env before use."
+  info "Start Colima when needed with: colima start"
+  info "Terminal.app and Warp appearance remain manual choices."
+  info "Reload the shell with: exec zsh"
 }
 
 main "$@"

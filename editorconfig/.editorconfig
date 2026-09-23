@@ -16,27 +16,28 @@ insert_final_newline = true
 [*.md]
 trim_trailing_whitespace = false
 
-[*.py]
+# Preserve ecosystem-standard indentation where two spaces would be incorrect.
+[*.{py,pyi}]
 indent_size = 4
 
 [*.go]
 indent_style = tab
-indent_size = 4
+indent_size = tab
+tab_width = 8
 
-[*.rs]
-indent_size = 4
-
-[*.java]
+[*.{cs,fs,fsi,fsx,java,rs,vb}]
 indent_size = 4
 
 [Makefile]
 indent_style = tab
+indent_size = tab
+tab_width = 8
 
 [*.{yml,yaml}]
 indent_size = 2
 
-[*.sh]
-indent_size = 4
+[*.{sh,zsh}]
+indent_size = 2
 
 [*.{json,jsonc}]
 indent_size = 2

@@ -6,20 +6,20 @@
 
 # eza → ls
 if command -v eza &>/dev/null; then
-    alias ls='eza --icons --group-directories-first'
-    alias ll='eza -la --icons --group-directories-first --git'
-    alias la='eza -a --icons --group-directories-first'
-    alias lt='eza --tree --level=2 --icons'
-    alias lt3='eza --tree --level=3 --icons'
-    alias lS='eza -la --icons --sort=size --reverse'
-    alias lm='eza -la --icons --sort=modified'
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -la --icons --group-directories-first --git'
+  alias la='eza -a --icons --group-directories-first'
+  alias lt='eza --tree --level=2 --icons'
+  alias lt3='eza --tree --level=3 --icons'
+  alias lS='eza -la --icons --sort=size --reverse'
+  alias lm='eza -la --icons --sort=modified'
 fi
 
 # bat → cat
 if command -v bat &>/dev/null; then
-    alias cat='bat --paging=never'
-    alias catp='bat --plain --paging=never'
-    alias batl='bat --style=full'
+  alias cat='bat --paging=never'
+  alias catp='bat --plain --paging=never'
+  alias batl='bat --style=full'
 fi
 
 # ripgrep → grep
@@ -82,10 +82,10 @@ command -v lazygit &>/dev/null && alias lg='lazygit'
 
 # gh (GitHub CLI)
 if command -v gh &>/dev/null; then
-    alias ghpr='gh pr create'
-    alias ghprv='gh pr view --web'
-    alias ghprs='gh pr status'
-    alias ghis='gh issue list'
+  alias ghpr='gh pr create'
+  alias ghprv='gh pr view --web'
+  alias ghprs='gh pr status'
+  alias ghis='gh issue list'
 fi
 
 # gitleaks — manual scan of the working tree (the same check the hooks run)
@@ -112,8 +112,8 @@ alias dvol='docker volume ls'
 
 # --- Dev tools ---------------------------------------------------------------
 if command -v btm &>/dev/null; then
-    alias top='btm'
-    alias btm='btm --basic'
+  alias top='btm'
+  alias btm='btm --basic'
 fi
 command -v ncdu &>/dev/null && alias du='ncdu --color dark'
 
@@ -142,9 +142,9 @@ command -v tmux-sessionizer &>/dev/null && alias ts='tmux-sessionizer'
 
 # mise (runtime version manager)
 if command -v mise &>/dev/null; then
-    alias mi='mise install'
-    alias mu='mise use'
-    alias mr='mise run'
+  alias mi='mise install'
+  alias mu='mise use'
+  alias mr='mise run'
 fi
 
 # --- Python ------------------------------------------------------------------
@@ -160,11 +160,11 @@ alias pipreq='pip freeze > requirements.txt'
 
 # uv (fast Python package manager — preferred over pip for new projects)
 if command -v uv &>/dev/null; then
-    alias uvs='uv sync'
-    alias uva='uv add'
-    alias uvr='uv run'
-    alias uvvenv='uv venv'
-    alias uvpi='uv pip install'
+  alias uvs='uv sync'
+  alias uva='uv add'
+  alias uvr='uv run'
+  alias uvvenv='uv venv'
+  alias uvpi='uv pip install'
 fi
 
 # --- Node/TypeScript ---------------------------------------------------------
@@ -181,43 +181,43 @@ alias tsc='npx tsc'
 
 # pnpm (fast npm alternative)
 if command -v pnpm &>/dev/null; then
-    alias pn='pnpm'
-    alias pni='pnpm install'
-    alias pnr='pnpm run'
-    alias pnd='pnpm run dev'
-    alias pnb='pnpm run build'
-    alias pnt='pnpm run test'
+  alias pn='pnpm'
+  alias pni='pnpm install'
+  alias pnr='pnpm run'
+  alias pnd='pnpm run dev'
+  alias pnb='pnpm run build'
+  alias pnt='pnpm run test'
 fi
 
 # bun (JS runtime & package manager)
 if command -v bun &>/dev/null; then
-    alias bi='bun install'
-    alias br='bun run'
-    alias bd='bun run dev'
-    alias bb='bun run build'
+  alias bi='bun install'
+  alias br='bun run'
+  alias bd='bun run dev'
+  alias bb='bun run build'
 fi
 
 # --- AWS ---------------------------------------------------------------------
 # awsl/awsls use aws-vault (this machine's workflow); the plain-SSO
 # equivalents are kept as awssso/awsprofiles to avoid shadowing them.
 if command -v aws &>/dev/null; then
-    # Switch AWS profile interactively (requires fzf)
-    awsp() {
-        local profile
-        profile=$(aws configure list-profiles 2>/dev/null | fzf --prompt="AWS Profile > " --height=40%) || return 1
-        export AWS_PROFILE="$profile"
-        echo "AWS_PROFILE set to: $AWS_PROFILE"
-    }
-    alias awsl='aws-vault exec'
-    alias awsls='aws-vault list'
-    alias awssso='aws sso login'
-    alias awsprofiles='aws configure list-profiles'
-    alias awsw='aws sts get-caller-identity'
-    alias awsregion='echo "${AWS_DEFAULT_REGION:-not set}"'
-    alias awsprofile='echo "${AWS_PROFILE:-default}"'
-    alias awsec2='aws ec2 describe-instances --output table'
-    alias awss3='aws s3 ls'
-    alias awslogs='aws logs tail --follow'
+  # Switch AWS profile interactively (requires fzf)
+  awsp() {
+    local profile
+    profile=$(aws configure list-profiles 2>/dev/null | fzf --prompt="AWS Profile > " --height=40%) || return 1
+    export AWS_PROFILE="$profile"
+    echo "AWS_PROFILE set to: $AWS_PROFILE"
+  }
+  alias awsl='aws-vault exec'
+  alias awsls='aws-vault list'
+  alias awssso='aws sso login'
+  alias awsprofiles='aws configure list-profiles'
+  alias awsw='aws sts get-caller-identity'
+  alias awsregion='echo "${AWS_DEFAULT_REGION:-not set}"'
+  alias awsprofile='echo "${AWS_PROFILE:-default}"'
+  alias awsec2='aws ec2 describe-instances --output table'
+  alias awss3='aws s3 ls'
+  alias awslogs='aws logs tail --follow'
 fi
 
 # --- Network & debugging -----------------------------------------------------

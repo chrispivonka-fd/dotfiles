@@ -52,7 +52,7 @@ jobs:
             git/hooks/lib/common.sh \
             scripts/test-git-hooks.sh
           zsh -n zsh/.zshrc zsh/aliases.zsh
-          shellcheck \
+          shellcheck -x \
             install.sh \
             bin/op-ssh-sign \
             bin/tmux-sessionizer \

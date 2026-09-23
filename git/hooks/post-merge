@@ -3,7 +3,7 @@
 set -euo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=lib/common.sh
+# shellcheck source=git/hooks/lib/common.sh
 source "$HOOK_DIR/lib/common.sh"
 
 changed="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null || true)"
@@ -16,24 +16,24 @@ mise_changed=0
 terraform_changed=0
 
 while IFS= read -r file; do
-    [ -n "$file" ] || continue
-    basename="${file##*/}"
-    case "$basename" in
-        package.json|package-lock.json|pnpm-lock.yaml|yarn.lock|bun.lock|bun.lockb)
-            node_changed=1 ;;
-        pyproject.toml|uv.lock|requirements*.txt)
-            python_changed=1 ;;
-        global.json|Directory.Packages.props|*.sln|*.csproj|*.fsproj|dotnet-tools.json)
-            dotnet_changed=1 ;;
-        go.mod|go.sum)
-            go_changed=1 ;;
-        Cargo.toml|Cargo.lock)
-            rust_changed=1 ;;
-        mise.toml|mise.lock|.mise.toml)
-            mise_changed=1 ;;
-        .terraform.lock.hcl)
-            terraform_changed=1 ;;
-    esac
+  [ -n "$file" ] || continue
+  basename="${file##*/}"
+  case "$basename" in
+    package.json|package-lock.json|pnpm-lock.yaml|yarn.lock|bun.lock|bun.lockb)
+      node_changed=1 ;;
+    pyproject.toml|uv.lock|requirements*.txt)
+      python_changed=1 ;;
+    global.json|Directory.Packages.props|*.sln|*.csproj|*.fsproj|dotnet-tools.json)
+      dotnet_changed=1 ;;
+    go.mod|go.sum)
+      go_changed=1 ;;
+    Cargo.toml|Cargo.lock)
+      rust_changed=1 ;;
+    mise.toml|mise.lock|.mise.toml)
+      mise_changed=1 ;;
+    .terraform.lock.hcl)
+      terraform_changed=1 ;;
+  esac
 done <<< "$changed"
 
 if (( node_changed )); then hook_info "JavaScript dependencies changed; run the repository's package-manager install"; fi

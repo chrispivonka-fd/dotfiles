@@ -4,13 +4,13 @@
 set -euo pipefail
 
 candidates=(
-    "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+  "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
 )
 
 for path in "${candidates[@]}"; do
-    if [ -x "$path" ]; then
-        exec "$path" "$@"
-    fi
+  if [ -x "$path" ]; then
+    exec "$path" "$@"
+  fi
 done
 
 echo "op-ssh-sign: not found — is the 1Password desktop app installed?" >&2
