@@ -1,49 +1,45 @@
 #!/usr/bin/env bash
-# Global pre-commit hook (core.hooksPath) — applies to every repo on this machine.
-# Bypass with `git commit --no-verify` when a check is a false positive.
+# Global staged-content checks. Bypass only for a deliberate false positive
+# with `git commit --no-verify`.
 set -euo pipefail
 
-# Block secrets in staged changes
-if command -v gitleaks &>/dev/null; then
-    gitleaks protect --staged --redact -v
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=lib/common.sh
+source "$HOOK_DIR/lib/common.sh"
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+    hook_error "gitleaks is required for commits; run the dotfiles installer"
+    exit 1
 fi
 
-# Block accidentally-staged large files (e.g. datasets, binaries, media)
-max_kb=5120
+if ! gitleaks git --staged --no-banner --redact .; then
+    hook_error "staged changes contain a potential secret"
+    exit 1
+fi
+
+max_bytes=$((5 * 1024 * 1024))
+sensitive_pattern='(^|/)(\.env($|\.)|secrets?(\.|$)|credentials($|\.)|id_(rsa|dsa|ecdsa|ed25519)$|.*\.(pem|key|p12|pfx)$)'
+safe_placeholder_pattern='(^|/)(\.env|secrets\.env|credentials)\.(example|sample|template|dist)$'
+
 while IFS= read -r -d '' file; do
-    [ -f "$file" ] || continue
-    size_kb=$(( $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null) / 1024 ))
-    if [ "$size_kb" -gt "$max_kb" ]; then
-        echo "error: $file is ${size_kb}KB, over the ${max_kb}KB limit (git commit --no-verify to bypass)" >&2
+    size_bytes="$(git cat-file -s ":$file" 2>/dev/null || printf '0')"
+    if [ "$size_bytes" -gt "$max_bytes" ]; then
+        hook_error "$file is larger than 5 MiB; use Git LFS or an artifact store"
         exit 1
     fi
-done < <(git diff --cached --name-only --diff-filter=ACM -z)
 
-# Block files that are almost always credentials/keys, even if their content
-# doesn't trip gitleaks (e.g. an empty placeholder .env)
-sensitive_pattern='(^|/)(\.env(\..+)?|.*\.pem|.*\.key|id_rsa|id_ed25519|id_ecdsa)$'
-safe_env_pattern='(^|/)\.env\.(example|sample|template|dist)$'
-while IFS= read -r -d '' file; do
-    [[ "$file" =~ $safe_env_pattern ]] && continue
+    if [[ "$file" =~ $safe_placeholder_pattern ]]; then
+        continue
+    fi
     if [[ "$file" =~ $sensitive_pattern ]]; then
-        echo "error: '$file' looks like a credential/key file (git commit --no-verify to bypass)" >&2
+        hook_error "$file looks like a credential or private-key file"
         exit 1
     fi
-done < <(git diff --cached --name-only --diff-filter=ACM -z)
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 
-# Block unresolved merge-conflict markers
-if git diff --cached -U0 | grep -qE '^\+(<{7}|={7}|>{7})( |$)'; then
-    echo "error: staged changes contain unresolved merge-conflict markers (git commit --no-verify to bypass)" >&2
+if ! git diff --cached --check; then
+    hook_error "staged changes contain whitespace errors or conflict markers"
     exit 1
 fi
 
-# Block whitespace errors (trailing whitespace, space-before-tab, etc.)
-if git rev-parse --verify HEAD >/dev/null 2>&1; then
-    against=HEAD
-else
-    against=$(git hash-object -t tree /dev/null)
-fi
-if ! git diff-index --check --cached "$against" --; then
-    echo "error: whitespace issues detected above (git commit --no-verify to bypass)" >&2
-    exit 1
-fi
+run_local_hook pre-commit "$@"

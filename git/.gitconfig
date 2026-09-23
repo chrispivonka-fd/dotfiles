@@ -80,7 +80,6 @@
     discard = checkout --
     last = log -1 HEAD
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-    wip = "!git add -A && git commit -m 'WIP [skip ci]'"
     undo = reset --soft HEAD~1
     amend = commit --amend --no-edit
     contributors = shortlog -sn --no-merges
