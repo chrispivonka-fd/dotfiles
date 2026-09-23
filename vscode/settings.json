@@ -62,9 +62,6 @@
   "[csharp]": {
     "editor.tabSize": 4,
   },
-  "[java]": {
-    "editor.tabSize": 4,
-  },
   "[makefile]": {
     "editor.insertSpaces": false,
     "editor.tabSize": 8,
