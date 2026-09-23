@@ -17,9 +17,6 @@ style = "fg:fg_muted"
 
 [os.symbols]
 Macos = ""
-Linux = "🐧"
-Ubuntu = ""
-Debian = ""
 
 # --- Character (prompt symbol) -----------------------------------------------
 [character]

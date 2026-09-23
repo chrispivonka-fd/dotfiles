@@ -31,6 +31,8 @@
   "editor.smoothScrolling": true,
   "workbench.list.smoothScrolling": true,
   "editor.multiCursorModifier": "alt",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
@@ -46,12 +48,26 @@
   },
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.tabSize": 4,
   },
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.tabSize": 4,
   },
   "[go]": {
     "editor.defaultFormatter": "golang.go",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 8,
+  },
+  "[csharp]": {
+    "editor.tabSize": 4,
+  },
+  "[java]": {
+    "editor.tabSize": 4,
+  },
+  "[makefile]": {
+    "editor.insertSpaces": false,
+    "editor.tabSize": 8,
   },
 
   // --- Terminal ---
@@ -70,7 +86,12 @@
   "explorer.confirmDelete": false,
 
   // --- Extensions ---
+  "extensions.autoCheckUpdates": false,
+  "extensions.autoUpdate": "off",
   "extensions.ignoreRecommendations": true,
-  "projectManager.git.baseFolders": ["~//GitHub"],
-  "workbench.startupEditor": "none",
+  "microsoft-authentication.implementation": "msal-no-broker",
+  "projectManager.git.baseFolders": ["~/GitHub"],
+  "settingsSync.ignoredExtensions": ["typescriptteam.native-preview"],
+  "todo-tree.ripgrep.ripgrep": "__DOTFILES_RIPGREP__",
+  "workbench.startupEditor": "none"
 }

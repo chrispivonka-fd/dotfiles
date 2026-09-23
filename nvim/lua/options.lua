@@ -15,6 +15,30 @@ opt.tabstop = 2
 opt.softtabstop = 2
 opt.smartindent = true
 
+local indentation = vim.api.nvim_create_augroup("LanguageIndentation", { clear = true })
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = indentation,
+  pattern = { "python", "rust", "java", "cs", "fsharp", "vb" },
+  callback = function()
+    vim.opt_local.expandtab = true
+    vim.opt_local.shiftwidth = 4
+    vim.opt_local.tabstop = 4
+    vim.opt_local.softtabstop = 4
+  end,
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = indentation,
+  pattern = { "go", "make" },
+  callback = function()
+    vim.opt_local.expandtab = false
+    vim.opt_local.shiftwidth = 0
+    vim.opt_local.tabstop = 8
+    vim.opt_local.softtabstop = 0
+  end,
+})
+
 -- Search
 opt.ignorecase = true
 opt.smartcase = true

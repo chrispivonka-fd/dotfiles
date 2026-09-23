@@ -1,9 +1,45 @@
-# Local overrides (contain personal/sensitive info)
+# Local overrides and secret-reference files
 *.local
+*.local.*
 *.local.conf
+secrets.env
+*.secrets.env
 
-# OS
-.DS_Store
+# Credentials and provider state
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+credentials
+hosts.yml
+.aws/
 
-# Claude
+# Tool-generated state
+/.mise/
+.terraform/
+*.tfstate
+*.tfstate.*
+.direnv/
+.venv/
+node_modules/
+coverage/
+
+# Editor and assistant state
 .claude/
+.codex/
+.idea/
+.vscode/*.local.json
+
+# macOS
+.DS_Store
+._*
+
+# Sanitized examples are intentionally public.
+!examples/
+!examples/*.local
+!examples/secrets.env.example

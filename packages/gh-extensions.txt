@@ -1,0 +1,5 @@
+# GitHub CLI extensions installed by the bootstrap script.
+
+dlvhdr/gh-dash
+seachicken/gh-poi
+yusukebe/gh-markdown-preview

@@ -1,0 +1,26 @@
+# Homebrew casks for GUI applications and vendor-native macOS tools.
+
+1password
+1password-cli
+bruno
+chatgpt
+claude-code
+codex
+datagrip
+font-jetbrains-mono-nerd-font
+font-meslo-lg-nerd-font
+github
+google-chrome
+hiddenbar
+mongodb-compass
+obsidian
+pgadmin4
+pycharm
+raycast
+rider
+session-manager-plugin
+slack
+spotify
+visual-studio-code
+warp
+zed

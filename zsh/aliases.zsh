@@ -6,29 +6,20 @@
 
 # eza → ls
 if command -v eza &>/dev/null; then
-    alias ls='eza --icons --group-directories-first'
-    alias ll='eza -la --icons --group-directories-first --git'
-    alias la='eza -a --icons --group-directories-first'
-    alias lt='eza --tree --level=2 --icons'
-    alias lt3='eza --tree --level=3 --icons'
-    alias lS='eza -la --icons --sort=size --reverse'
-    alias lm='eza -la --icons --sort=modified'
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -la --icons --group-directories-first --git'
+  alias la='eza -a --icons --group-directories-first'
+  alias lt='eza --tree --level=2 --icons'
+  alias lt3='eza --tree --level=3 --icons'
+  alias lS='eza -la --icons --sort=size --reverse'
+  alias lm='eza -la --icons --sort=modified'
 fi
 
 # bat → cat
 if command -v bat &>/dev/null; then
-    alias cat='bat --paging=never'
-    alias catp='bat --plain --paging=never'
-    alias batl='bat --style=full'
-elif command -v batcat &>/dev/null; then
-    alias bat='batcat'
-    alias cat='batcat --paging=never'
-    alias catp='batcat --plain --paging=never'
-fi
-
-# fd (handle Ubuntu's fdfind)
-if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
-    alias fd='fdfind'
+  alias cat='bat --paging=never'
+  alias catp='bat --plain --paging=never'
+  alias batl='bat --style=full'
 fi
 
 # ripgrep → grep
@@ -52,7 +43,6 @@ alias gss='git status -s'
 alias ga='git add'
 alias gaa='git add --all'
 alias gap='git add -p'
-alias gc='git commit'
 alias gcm='git commit -m'
 alias gca='git commit --amend'
 alias gcan='git commit --amend --no-edit'
@@ -85,8 +75,6 @@ alias grba='git rebase --abort'
 alias gcp='git cherry-pick'
 alias gbl='git blame'
 alias gclean='git clean -fd'
-alias gwip='git add -A && git commit -m "WIP [skip ci]"'
-alias gunwip='git log -1 --format="%s" | grep -q "WIP" && git reset HEAD~1'
 alias gtags='git tag -l --sort=-version:refname'
 
 # lazygit
@@ -94,10 +82,10 @@ command -v lazygit &>/dev/null && alias lg='lazygit'
 
 # gh (GitHub CLI)
 if command -v gh &>/dev/null; then
-    alias ghpr='gh pr create'
-    alias ghprv='gh pr view --web'
-    alias ghprs='gh pr status'
-    alias ghis='gh issue list'
+  alias ghpr='gh pr create'
+  alias ghprv='gh pr view --web'
+  alias ghprs='gh pr status'
+  alias ghis='gh issue list'
 fi
 
 # gitleaks — manual scan of the working tree (the same check the hooks run)
@@ -105,9 +93,6 @@ command -v gitleaks &>/dev/null && alias leakscan='gitleaks detect --no-git --so
 
 # lazydocker
 command -v lazydocker &>/dev/null && alias ld='lazydocker'
-
-# yazi
-command -v yazi &>/dev/null && alias yz='yazi'
 
 # --- Docker aliases ----------------------------------------------------------
 alias d='docker'
@@ -127,14 +112,10 @@ alias dvol='docker volume ls'
 
 # --- Dev tools ---------------------------------------------------------------
 if command -v btm &>/dev/null; then
-    alias top='btm'
-    alias btm='btm --basic'
-elif command -v htop &>/dev/null; then
-    alias top='htop'
+  alias top='btm'
+  alias btm='btm --basic'
 fi
 command -v ncdu &>/dev/null && alias du='ncdu --color dark'
-command -v http &>/dev/null && alias https='http --default-scheme=https'
-command -v just &>/dev/null && alias j='just'
 
 # --- Rust --------------------------------------------------------------------
 # cg (not c) — c is 'clear' in Common utilities below
@@ -161,22 +142,9 @@ command -v tmux-sessionizer &>/dev/null && alias ts='tmux-sessionizer'
 
 # mise (runtime version manager)
 if command -v mise &>/dev/null; then
-    alias mi='mise install'
-    alias mu='mise use'
-    alias mr='mise run'
-fi
-
-# yazi (terminal file manager) — cd's the shell to wherever you exit yazi in
-if command -v yazi &>/dev/null; then
-    function y() {
-        local tmp
-        tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-        yazi "$@" --cwd-file="$tmp"
-        if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-            cd -- "$cwd"
-        fi
-        rm -f -- "$tmp"
-    }
+  alias mi='mise install'
+  alias mu='mise use'
+  alias mr='mise run'
 fi
 
 # --- Python ------------------------------------------------------------------
@@ -192,11 +160,11 @@ alias pipreq='pip freeze > requirements.txt'
 
 # uv (fast Python package manager — preferred over pip for new projects)
 if command -v uv &>/dev/null; then
-    alias uvs='uv sync'
-    alias uva='uv add'
-    alias uvr='uv run'
-    alias uvvenv='uv venv'
-    alias uvpi='uv pip install'
+  alias uvs='uv sync'
+  alias uva='uv add'
+  alias uvr='uv run'
+  alias uvvenv='uv venv'
+  alias uvpi='uv pip install'
 fi
 
 # --- Node/TypeScript ---------------------------------------------------------
@@ -213,48 +181,48 @@ alias tsc='npx tsc'
 
 # pnpm (fast npm alternative)
 if command -v pnpm &>/dev/null; then
-    alias pn='pnpm'
-    alias pni='pnpm install'
-    alias pnr='pnpm run'
-    alias pnd='pnpm run dev'
-    alias pnb='pnpm run build'
-    alias pnt='pnpm run test'
+  alias pn='pnpm'
+  alias pni='pnpm install'
+  alias pnr='pnpm run'
+  alias pnd='pnpm run dev'
+  alias pnb='pnpm run build'
+  alias pnt='pnpm run test'
 fi
 
 # bun (JS runtime & package manager)
 if command -v bun &>/dev/null; then
-    alias bi='bun install'
-    alias br='bun run'
-    alias bd='bun run dev'
-    alias bb='bun run build'
+  alias bi='bun install'
+  alias br='bun run'
+  alias bd='bun run dev'
+  alias bb='bun run build'
 fi
 
 # --- AWS ---------------------------------------------------------------------
 # awsl/awsls use aws-vault (this machine's workflow); the plain-SSO
 # equivalents are kept as awssso/awsprofiles to avoid shadowing them.
 if command -v aws &>/dev/null; then
-    # Switch AWS profile interactively (requires fzf)
-    awsp() {
-        local profile
-        profile=$(aws configure list-profiles 2>/dev/null | fzf --prompt="AWS Profile > " --height=40%) || return 1
-        export AWS_PROFILE="$profile"
-        echo "AWS_PROFILE set to: $AWS_PROFILE"
-    }
-    alias awsl='aws-vault exec'
-    alias awsls='aws-vault list'
-    alias awssso='aws sso login'
-    alias awsprofiles='aws configure list-profiles'
-    alias awsw='aws sts get-caller-identity'
-    alias awsregion='echo "${AWS_DEFAULT_REGION:-not set}"'
-    alias awsprofile='echo "${AWS_PROFILE:-default}"'
-    alias awsec2='aws ec2 describe-instances --output table'
-    alias awss3='aws s3 ls'
-    alias awslogs='aws logs tail --follow'
+  # Switch AWS profile interactively (requires fzf)
+  awsp() {
+    local profile
+    profile=$(aws configure list-profiles 2>/dev/null | fzf --prompt="AWS Profile > " --height=40%) || return 1
+    export AWS_PROFILE="$profile"
+    echo "AWS_PROFILE set to: $AWS_PROFILE"
+  }
+  alias awsl='aws-vault exec'
+  alias awsls='aws-vault list'
+  alias awssso='aws sso login'
+  alias awsprofiles='aws configure list-profiles'
+  alias awsw='aws sts get-caller-identity'
+  alias awsregion='echo "${AWS_DEFAULT_REGION:-not set}"'
+  alias awsprofile='echo "${AWS_PROFILE:-default}"'
+  alias awsec2='aws ec2 describe-instances --output table'
+  alias awss3='aws s3 ls'
+  alias awslogs='aws logs tail --follow'
 fi
 
 # --- Network & debugging -----------------------------------------------------
 alias myip='curl -s ifconfig.me'
-alias localip='ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk "{print \$1}"'
+alias localip='ipconfig getifaddr en0 2>/dev/null'
 alias ports='lsof -i -P -n | command grep LISTEN'
 alias ping='ping -c 5'
 alias headers='curl -I'
@@ -286,15 +254,6 @@ alias uuid='python3 -c "import uuid; print(uuid.uuid4())"'
 alias serve='python3 -m http.server 8000'
 alias sha256='shasum -a 256'
 
-# --- GCloud --------------------------------------------------------------------
-if command -v gcloud &>/dev/null; then
-    alias gcp='gcloud'
-    alias gcpl='gcloud auth login'
-    alias gcpp='gcloud config set project'
-    alias gcps='gcloud config set project'
-    alias gcp-who='gcloud config get-value account'
-fi
-
 # --- Process management ------------------------------------------------------
 alias psg='ps aux | command grep -v grep | command grep'
 alias killport='kill -9 $(lsof -t -i)'  # usage: killport :3000
@@ -311,14 +270,9 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-# --- Clipboard (cross-platform) ---------------------------------------------
-if [[ "$OSTYPE" == darwin* ]]; then
-    alias clip='pbcopy'
-    alias paste='pbpaste'
-elif command -v xclip &>/dev/null; then
-    alias clip='xclip -selection clipboard'
-    alias paste='xclip -selection clipboard -o'
-fi
+# --- Clipboard ---------------------------------------------------------------
+alias clip='pbcopy'
+alias paste='pbpaste'
 
 # --- Quick edit configs ------------------------------------------------------
 alias zshrc='${EDITOR:-nvim} ~/.zshrc'

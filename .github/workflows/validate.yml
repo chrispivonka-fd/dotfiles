@@ -1,0 +1,99 @@
+---
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate macOS dotfiles
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install validation tools
+        run: brew install actionlint gitleaks shellcheck yq zizmor
+
+      - name: Validate workflow security and syntax
+        run: |
+          actionlint
+          zizmor --offline --format=github .github/workflows
+
+      - name: Validate shell scripts
+        run: |
+          bash -n \
+            install.sh \
+            bin/op-ssh-sign \
+            bin/tmux-sessionizer \
+            git/hooks/commit-msg \
+            git/hooks/post-merge \
+            git/hooks/pre-commit \
+            git/hooks/pre-push \
+            git/hooks/lib/common.sh \
+            scripts/test-git-hooks.sh
+          zsh -n zsh/.zshrc zsh/aliases.zsh
+          shellcheck -x \
+            install.sh \
+            bin/op-ssh-sign \
+            bin/tmux-sessionizer \
+            git/hooks/commit-msg \
+            git/hooks/post-merge \
+            git/hooks/pre-commit \
+            git/hooks/pre-push \
+            git/hooks/lib/common.sh \
+            scripts/test-git-hooks.sh
+
+      - name: Validate configuration files
+        run: |
+          python3 - <<'PY'
+          import json
+          import tomllib
+          from pathlib import Path
+
+          for path in (
+              Path("atuin/config.toml"),
+              Path("mise/config.toml"),
+              Path("mise/mise.lock"),
+          ):
+              with path.open("rb") as stream:
+                  tomllib.load(stream)
+
+          for path in (
+              Path("claude/settings.json"),
+              Path("templates/devcontainers/base/.devcontainer/devcontainer.json"),
+          ):
+              with path.open(encoding="utf-8") as stream:
+                  json.load(stream)
+          PY
+          yq eval '.' templates/devcontainers/databases/compose.yaml >/dev/null
+          empty_tree="$(git hash-object -t tree /dev/null)"
+          git diff --check "$empty_tree" HEAD --
+
+      - name: Test Git hooks
+        run: ./scripts/test-git-hooks.sh
+
+      - name: Scan current files for secrets
+        run: gitleaks dir . --no-banner --redact --verbose
+
+      - name: Scan Git history for secrets
+        run: gitleaks git . --no-banner --redact --verbose

@@ -1,0 +1,4 @@
+# Mac App Store applications. Format: <numeric app id> # <display name>
+# The installer never signs in to the App Store automatically.
+
+497799835 # Xcode

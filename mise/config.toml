@@ -1,43 +1,50 @@
-# =============================================================================
-# Mise — global tool versions
-# Docs: https://mise.jdx.dev/configuration.html
-# =============================================================================
-# These are the global fallback versions used when no project-level
-# .mise.toml or .tool-versions file is present.
+# Global fallback toolchain for the macOS work environment.
+# Project-level mise.toml files and idiomatic version files take precedence.
 
-[tools]
-python = "3.13"
-node = "lts"
-go = "latest"
-rust = "latest"
-
-# Package managers/runtimes for the above — mise-managed so there's one
-# consistent, checksum-verified path instead of each having its own
-# official curl-installer script per OS
-pnpm = "latest"
-bun = "latest"
-uv = "latest"
-
-# CLI tools — mise's aqua backend installs these with checksum verification,
-# one consistent path on both macOS and Linux (replaces per-OS package lists
-# and hand-rolled GitHub-release curl installers)
-delta = "latest"
-lazygit = "latest"
-lazydocker = "latest"
-yq = "latest"
-gitleaks = "latest"
-tree-sitter = "latest"
-yazi = "latest"
-bottom = "latest"
-atuin = "latest"
-vivid = "latest"
+min_version = "2026.9.12"
 
 [settings]
 experimental = true
-plugin_autoupdate_last_check_duration = "7d"
-always_keep_download = false
-always_keep_install = false
-# Activate tools automatically when entering a directory
-activate_aggressive = false
-# Speed: don't re-check for new versions on every shell init
+lockfile = true
+lockfile_platforms = ["macos-arm64", "macos-x64"]
+minimum_release_age = "7d"
 not_found_auto_install = false
+idiomatic_version_file_enable_tools = [
+  "dotnet",
+  "go",
+  "node",
+  "python",
+  "rust",
+  "terraform",
+]
+
+[tools]
+# Runtimes and package managers. The lockfile makes these global fallbacks
+# reproducible; projects pin any required version in their own mise.toml.
+node = "latest"
+python = "latest"
+dotnet = "latest"
+go = "latest"
+rust = { version = "latest", profile = "default" }
+terraform = "latest"
+bun = "latest"
+pnpm = "latest"
+uv = "latest"
+
+# Portable cross-project tools distributed by their native ecosystems.
+aws-cdk = "latest"
+"npm:npm-check-updates" = "latest"
+ruff = "latest"
+snyk = "latest"
+tflint = "latest"
+pre-commit = "latest"
+yamllint = "latest"
+"pipx:sqlfluff" = "latest"
+zizmor = "latest"
+actionlint = "latest"
+tree-sitter = "latest"
+
+# Global .NET tools retained for AWS Lambda, EF Core, and dependency updates.
+"dotnet:amazon.lambda.tools" = "latest"
+"dotnet:dotnet-ef" = "latest"
+"dotnet:dotnet-outdated-tool" = "latest"

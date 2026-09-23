@@ -1,735 +1,386 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# =============================================================================
-# Dotfiles installer — works on macOS and Ubuntu/Debian
-# Safe to run multiple times (idempotent)
-# =============================================================================
+# Idempotent bootstrap for the macOS work environment.
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+BACKUP_DIR="$HOME/.dotfiles-backups/$(date +%Y%m%d_%H%M%S)"
+DRY_RUN=false
+SKIP_APPS=false
+NO_UPDATE=false
 
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-info()    { printf '\033[1;34m[info]\033[0m %s\n' "$1"; }
+info() { printf '\033[1;34m[info]\033[0m %s\n' "$1"; }
 success() { printf '\033[1;32m[ok]\033[0m   %s\n' "$1"; }
-warn()    { printf '\033[1;33m[warn]\033[0m %s\n' "$1"; }
-error()   { printf '\033[1;31m[err]\033[0m  %s\n' "$1"; }
+warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$1"; }
+error() { printf '\033[1;31m[err]\033[0m  %s\n' "$1" >&2; }
 
-command_exists() { command -v "$1" &>/dev/null; }
-
-# Create a symlink, backing up any existing file
-link_file() {
-    local src="$1" dst="$2"
-
-    # Already the correct symlink — skip
-    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-        success "Already linked: $dst"
-        return
-    fi
-
-    # Something exists at the destination — back it up, mirroring its path
-    # under $HOME so two dsts sharing a basename (e.g. two settings.json)
-    # can't collide and silently abort the backup mid-run.
-    if [ -e "$dst" ] || [ -L "$dst" ]; then
-        local backup_dst="$BACKUP_DIR${dst#"$HOME"}"
-        mkdir -p "$(dirname "$backup_dst")"
-        mv "$dst" "$backup_dst"
-        warn "Backed up existing $dst → $backup_dst"
-    fi
-
-    # Ensure parent directory exists
-    mkdir -p "$(dirname "$dst")"
-    ln -s "$src" "$dst"
-    success "Linked: $dst → $src"
+usage() {
+  printf '%s\n' \
+    "Usage: ./install.sh [--dry-run] [--skip-apps] [--no-update]" \
+    "" \
+    "  --dry-run    Print changes without applying them" \
+    "  --skip-apps  Skip Homebrew casks and Mac App Store apps" \
+    "  --no-update  Skip brew update"
 }
 
-# -----------------------------------------------------------------------------
-# Detect OS
-# -----------------------------------------------------------------------------
-detect_os() {
-    case "$OSTYPE" in
-        darwin*)  OS="macos" ;;
-        linux*)
-            if [ -f /etc/os-release ]; then
-                . /etc/os-release
-                case "$ID" in
-                    ubuntu|debian|pop|linuxmint|elementary) OS="debian" ;;
-                    *) error "Unsupported Linux distro: $ID"; exit 1 ;;
-                esac
-            else
-                error "Cannot detect Linux distribution"; exit 1
-            fi
-            ;;
-        *) error "Unsupported OS: $OSTYPE"; exit 1 ;;
+run() {
+  if $DRY_RUN; then
+    printf '\033[1;36m[dry-run]\033[0m'
+    printf ' %q' "$@"
+    printf '\n'
+  else
+    "$@"
+  fi
+}
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+manifest_entries() {
+  sed \
+    -e 's/[[:space:]]*#.*$//' \
+    -e 's/^[[:space:]]*//' \
+    -e 's/[[:space:]]*$//' \
+    -e '/^$/d' \
+    "$1"
+}
+
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --dry-run) DRY_RUN=true ;;
+      --skip-apps) SKIP_APPS=true ;;
+      --no-update) NO_UPDATE=true ;;
+      -h|--help) usage; exit 0 ;;
+      *) error "Unknown option: $1"; usage; exit 2 ;;
     esac
-    info "Detected OS: $OS"
+    shift
+  done
 }
 
-# -----------------------------------------------------------------------------
-# Package installation — macOS
-# -----------------------------------------------------------------------------
-install_packages_macos() {
-    # Install Homebrew if missing
-    if ! command_exists brew; then
-        info "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
-    fi
-
-    local packages=(
-        neovim tmux starship fzf ripgrep fd bat eza zoxide
-        gh git-lfs direnv just mise
-        tldr jq htop ncdu httpie tree shellcheck
-        pinentry-mac 1password-cli
-        ruff golangci-lint
-        awscli aws-vault terraform
-    )
-
-    info "Installing packages via Homebrew..."
-    brew install "${packages[@]}" 2>/dev/null || true
-    
-    # Google Cloud SDK (cask)
-    if ! command_exists gcloud; then
-        info "Installing Google Cloud SDK..."
-        brew install --cask google-cloud-sdk 2>/dev/null || true
-    fi
-
-    # OrbStack (Docker runtime — lightweight Docker Desktop replacement)
-    if ! command_exists docker; then
-        info "Installing OrbStack..."
-        brew install --cask orbstack 2>/dev/null || true
-    fi
-
-    success "Homebrew packages installed"
-
-    # delta, lazygit, lazydocker, yq, gitleaks, tree-sitter, yazi, bottom,
-    # atuin, vivid are installed later via mise (see install_mise_tools) for
-    # one consistent, checksum-verified path across both macOS and Linux —
-    # see mise/config.toml.
-
-    # Nerd Fonts (needed for icons in starship, neovim, eza, etc.)
-    local fonts=(
-        font-meslo-lg-nerd-font
-        font-jetbrains-mono-nerd-font
-        font-fira-code-nerd-font
-    )
-    info "Installing Nerd Fonts..."
-    brew install --cask "${fonts[@]}" 2>/dev/null || true
-    success "Nerd Fonts installed"
+require_macos() {
+  if [ "$(uname -s)" != "Darwin" ]; then
+    error "This work fork supports macOS only."
+    exit 1
+  fi
 }
 
-# -----------------------------------------------------------------------------
-# Install the "GitHub Dark" Terminal.app profile (macOS only). Terminal's
-# AppleScript dictionary can't set the ANSI palette or cursor shape/blink, so
-# bin/setup-terminal-theme edits ~/Library/Preferences/com.apple.Terminal.plist
-# directly. Depends on the Nerd Fonts installed above.
-# -----------------------------------------------------------------------------
-setup_terminal_theme_macos() {
-    if ! command_exists python3; then
-        warn "python3 not found, skipping Terminal.app theme setup"
-        return
-    fi
+link_file() {
+  local src="$1"
+  local dst="$2"
 
-    info "Installing 'GitHub Dark' Terminal.app profile..."
-    if "$DOTFILES_DIR/bin/setup-terminal-theme"; then
-        success "Terminal.app theme installed (restart Terminal.app to see it fully)"
-    else
-        warn "Terminal.app theme setup failed"
-    fi
+  if ! $DRY_RUN && [ ! -e "$src" ] && [ ! -L "$src" ]; then
+    error "Cannot link missing source: $src"
+    exit 1
+  fi
+
+  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+    success "Already linked: $dst"
+    return
+  fi
+
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    local backup_dst="$BACKUP_DIR${dst#"$HOME"}"
+    run mkdir -p "$(dirname "$backup_dst")"
+    run mv "$dst" "$backup_dst"
+    warn "Backed up $dst to $backup_dst"
+  fi
+
+  run mkdir -p "$(dirname "$dst")"
+  run ln -s "$src" "$dst"
 }
 
-# -----------------------------------------------------------------------------
-# Package installation — Debian/Ubuntu
-# -----------------------------------------------------------------------------
-install_packages_debian() {
-    info "Updating apt package lists..."
-    sudo apt-get update -qq
+copy_local_template() {
+  local src="$1"
+  local dst="$2"
+  local mode="$3"
 
-    # Core packages available in default repos
-    local apt_packages=(
-        neovim tmux fzf ripgrep fd-find bat zoxide git git-lfs curl wget unzip
-        tldr jq htop ncdu httpie tree shellcheck pinentry-curses gnupg
-        direnv terraform
-    )
-    info "Installing core packages via apt..."
-    sudo apt-get install -y -qq "${apt_packages[@]}"
+  if [ -e "$dst" ]; then
+    success "Local file already exists: $dst"
+    return
+  fi
 
-    # Just (Task runner)
-    if ! command_exists just; then
-        info "Installing just..."
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-    fi
-
-    # Mise (Manager for dev tools/languages)
-    if ! command_exists mise; then
-        info "Installing mise..."
-        curl https://mise.jdx.dev/install.sh | sh
-    fi
-
-    # Ruff (Python linter/formatter)
-    if ! command_exists ruff; then
-        info "Installing ruff..."
-        curl -LsSf https://astral.sh/ruff/install.sh | sh
-    fi
-
-
-    # AWS CLI v2
-    if ! command_exists aws; then
-        info "Installing AWS CLI v2..."
-        local arch_aws="x86_64"
-        if [ "$(uname -m)" = "aarch64" ]; then arch_aws="aarch64"; fi
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-${arch_aws}.zip" -o "awscliv2.zip"
-        unzip -q awscliv2.zip
-        sudo ./aws/install --update
-        rm -rf aws awscliv2.zip
-    fi
-
-    # Google Cloud SDK
-    if ! command_exists gcloud; then
-        info "Installing Google Cloud SDK..."
-        curl https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME/.local/share"
-        # The installer adds to .zshrc, but we might want to handle it ourselves
-    fi
-
-    # Golangci-lint
-    if ! command_exists golangci-lint; then
-        info "Installing golangci-lint..."
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin
-    fi
-
-    # Create compatibility symlinks for Ubuntu's renamed binaries
-    mkdir -p "$HOME/.local/bin"
-    export PATH="$HOME/.local/bin:$PATH" # so mise (installed below) is found later in this script
-    if command_exists batcat && ! command_exists bat; then
-        ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
-        success "Linked batcat → bat"
-    fi
-    if command_exists fdfind && ! command_exists fd; then
-        ln -sf "$(which fdfind)" "$HOME/.local/bin/fd"
-        success "Linked fdfind → fd"
-    fi
-
-    # Starship — official installer
-    if ! command_exists starship; then
-        info "Installing starship..."
-        curl --proto '=https' --tlsv1.2 -sS https://starship.rs/install.sh | sh -s -- -y
-    fi
-
-    # Eza — from official repo
-    if ! command_exists eza; then
-        info "Installing eza..."
-        sudo mkdir -p /etc/apt/keyrings
-        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq eza
-    fi
-
-    # delta, lazygit, lazydocker, yq, gitleaks, tree-sitter, yazi, bottom,
-    # atuin, vivid are installed later via mise (see install_mise_tools) —
-    # mise's aqua backend checksum-verifies these GitHub releases instead of
-    # the hand-rolled curl+API pattern used elsewhere in this function.
-
-    # GitHub CLI — official apt repo
-    if ! command_exists gh; then
-        info "Installing GitHub CLI..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
-        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq gh
-    fi
-
-    # mise — official installer
-    if ! command_exists mise; then
-        info "Installing mise..."
-        curl --proto '=https' --tlsv1.2 -sS https://mise.run | sh
-    fi
-
-    # Docker Engine — official convenience script (auto-detects the exact
-    # distro; OrbStack, used on macOS, doesn't have a Linux equivalent)
-    if ! command_exists docker; then
-        info "Installing Docker Engine..."
-        curl -fsSL https://get.docker.com | sh
-        sudo usermod -aG docker "$USER"
-        warn "Added $USER to the docker group — log out/in (or run 'newgrp docker') for it to take effect"
-    fi
-
-    # 1Password CLI — official apt repo
-    if ! command_exists op; then
-        info "Installing 1Password CLI..."
-        curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq 1password-cli
-    fi
-
-    # AWS CLI v2 — official installer
-    if ! command_exists aws; then
-        info "Installing AWS CLI v2..."
-        local arch_aws="x86_64"
-        if [ "$(uname -m)" = "aarch64" ]; then arch_aws="aarch64"; fi
-        curl --proto '=https' --tlsv1.2 -fsSLo /tmp/awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-${arch_aws}.zip"
-        unzip -qo /tmp/awscliv2.zip -d /tmp
-        sudo /tmp/aws/install --update
-        rm -rf /tmp/awscliv2.zip /tmp/aws
-    fi
-
-    # pnpm, bun, uv are installed later via mise (see install_mise_tools)
-
-    # Nerd Fonts — download from GitHub releases
-    local font_dir="$HOME/.local/share/fonts"
-    mkdir -p "$font_dir"
-    local nerd_fonts=("Meslo" "JetBrainsMono" "FiraCode")
-    local nf_version
-    nf_version=$(curl -sL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | grep '"tag_name"' | head -1 | cut -d'"' -f4)
-    for font in "${nerd_fonts[@]}"; do
-        if ! ls "$font_dir"/*"${font}"* &>/dev/null; then
-            info "Installing Nerd Font: $font..."
-            curl -sLo "/tmp/${font}.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/${nf_version}/${font}.zip"
-            unzip -qo "/tmp/${font}.zip" -d "$font_dir"
-            rm -f "/tmp/${font}.zip"
-        fi
-    done
-    fc-cache -f "$font_dir" 2>/dev/null || true
-    success "Nerd Fonts installed"
-
-    success "All Debian/Ubuntu packages installed"
+  run mkdir -p "$(dirname "$dst")"
+  run install -m "$mode" "$src" "$dst"
+  warn "Created $dst from a sanitized template; review its placeholders."
 }
 
-# -----------------------------------------------------------------------------
-# Extract personal git config → ~/.gitconfig.local
-# -----------------------------------------------------------------------------
-setup_gitconfig_local() {
-    if [ -f "$HOME/.gitconfig.local" ]; then
-        info "~/.gitconfig.local already exists, skipping extraction"
-        return
+setup_vscode_settings() {
+  local shared_settings="$HOME/.config/dotfiles/vscode-settings.json"
+  local stable_settings="$HOME/Library/Application Support/Code/User/settings.json"
+  local insiders_settings="$HOME/Library/Application Support/Code - Insiders/User/settings.json"
+  local backup_settings="$BACKUP_DIR/.config/dotfiles/vscode-settings.json"
+  local rendered_settings
+  local ripgrep_path
+
+  ripgrep_path="$(brew --prefix ripgrep)/bin/rg"
+  if ! $DRY_RUN && [ ! -x "$ripgrep_path" ]; then
+    error "Homebrew ripgrep executable is unavailable: $ripgrep_path"
+    exit 1
+  fi
+
+  if $DRY_RUN; then
+    info "Would render shared VS Code settings with ripgrep at $ripgrep_path"
+  else
+    rendered_settings="$(mktemp)"
+    sed -e "s|__DOTFILES_RIPGREP__|$ripgrep_path|" \
+      "$DOTFILES_DIR/vscode/settings.json" > "$rendered_settings"
+
+    if [ -e "$shared_settings" ] && ! cmp -s "$rendered_settings" "$shared_settings"; then
+      mkdir -p "$(dirname "$backup_settings")"
+      cp -p "$shared_settings" "$backup_settings"
+      warn "Backed up $shared_settings to $backup_settings"
     fi
 
-    info "Extracting personal git settings to ~/.gitconfig.local..."
+    mkdir -p "$(dirname "$shared_settings")"
+    install -m 600 "$rendered_settings" "$shared_settings"
+    rm -f "$rendered_settings"
+  fi
+  success "Rendered shared local VS Code settings: $shared_settings"
 
-    local name email signingkey gpgsign=""
-    name=$(git config --global --get user.name 2>/dev/null || echo "")
-    email=$(git config --global --get user.email 2>/dev/null || echo "")
-    signingkey=$(git config --global --get user.signingkey 2>/dev/null || echo "")
-    gpgsign=$(git config --global --get commit.gpgsign 2>/dev/null || echo "")
-
-    cat > "$HOME/.gitconfig.local" <<EOF
-# Personal git settings — not tracked in dotfiles repo
-# Edit this file for machine-specific git configuration
-
-[user]
-    name = ${name}
-    email = ${email}
-EOF
-
-    if [ -n "$signingkey" ]; then
-        cat >> "$HOME/.gitconfig.local" <<EOF
-    signingkey = ${signingkey}
-EOF
-    fi
-
-    if [ -n "$gpgsign" ]; then
-        cat >> "$HOME/.gitconfig.local" <<EOF
-
-[commit]
-    gpgsign = ${gpgsign}
-EOF
-    fi
-
-    # OS-specific credential helper
-    if [ "$OS" = "macos" ]; then
-        cat >> "$HOME/.gitconfig.local" <<EOF
-
-[credential]
-    helper = osxkeychain
-EOF
-    else
-        cat >> "$HOME/.gitconfig.local" <<EOF
-
-[credential]
-    helper = cache --timeout=86400
-EOF
-    fi
-
-    success "Created ~/.gitconfig.local"
+  link_file "$shared_settings" "$stable_settings"
+  link_file "$shared_settings" "$insiders_settings"
 }
 
-# -----------------------------------------------------------------------------
-# Create ~/.zshrc.local stub
-# -----------------------------------------------------------------------------
-setup_zshrc_local() {
-    if [ -f "$HOME/.zshrc.local" ]; then
-        info "~/.zshrc.local already exists, skipping"
-        return
+install_homebrew() {
+  if ! command_exists brew; then
+    info "Installing Homebrew..."
+    if $DRY_RUN; then
+      info "Would download and run the official Homebrew installer."
+      return
     fi
 
-    cat > "$HOME/.zshrc.local" <<'EOF'
-# Local zsh overrides — not tracked in dotfiles repo
-# Add machine-specific exports, PATH entries, API keys, etc.
+    local installer
+    installer="$(mktemp)"
+    curl -fsSLo "$installer" https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+    env NONINTERACTIVE=1 /bin/bash "$installer"
+    rm -f "$installer"
 
-# Example:
-# export ANTHROPIC_API_KEY="sk-ant-..."
-# export GEMINI_API_KEY="..."
-# export OPENAI_API_KEY="sk-..."
-# export PATH="$HOME/custom/bin:$PATH"
-EOF
+    if [ -x /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -x /usr/local/bin/brew ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+  fi
 
-    success "Created ~/.zshrc.local"
+  if ! $NO_UPDATE; then
+    run brew update
+  fi
+
+  info "Installing Homebrew formulae..."
+  while IFS= read -r package; do
+    if ! brew list --formula "$package" >/dev/null 2>&1; then
+      run brew install "$package"
+    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/brew-formulae.txt")
+
+  if $SKIP_APPS; then
+    info "Skipping casks and Mac App Store apps."
+    return
+  fi
+
+  info "Installing Homebrew casks..."
+  while IFS= read -r package; do
+    if ! brew list --cask "$package" >/dev/null 2>&1; then
+      run brew install --cask "$package"
+    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/brew-casks.txt")
+
+  if ! command_exists mas; then
+    warn "mas is unavailable; skipping Mac App Store apps."
+    return
+  fi
+
+  while IFS= read -r app_id; do
+    if ! mas list | awk '{print $1}' | grep -qx "$app_id"; then
+      if ! run mas install "$app_id"; then
+        warn "Could not install App Store app $app_id; sign in to the App Store and retry."
+      fi
+    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/mas-apps.txt")
 }
 
-# -----------------------------------------------------------------------------
-# Create ~/.tmux.local.conf stub
-# -----------------------------------------------------------------------------
-setup_tmux_local() {
-    if [ -f "$HOME/.tmux.local.conf" ]; then
-        info "~/.tmux.local.conf already exists, skipping"
-        return
-    fi
+setup_local_files() {
+  copy_local_template "$DOTFILES_DIR/examples/zshrc.local" "$HOME/.zshrc.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/gitconfig.local" "$HOME/.gitconfig.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/ssh-config.local" "$HOME/.ssh/config.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/tmux.conf.local" "$HOME/.tmux.conf.local" 600
+  copy_local_template "$DOTFILES_DIR/examples/secrets.env.example" "$HOME/.config/dotfiles/secrets.env" 600
 
-    cat > "$HOME/.tmux.local.conf" <<'EOF'
-# Local tmux overrides — not tracked in dotfiles repo
-# Add machine-specific tmux settings here
+  run mkdir -p "$HOME/.config/dotfiles/hooks.local"
+  run chmod 700 "$HOME/.ssh" "$HOME/.config/dotfiles" "$HOME/.config/dotfiles/hooks.local"
 
-# Example:
-# set -g status-right '#[fg=white]#H  %H:%M  %d-%b '
-EOF
-
-    success "Created ~/.tmux.local.conf"
+  if [ ! -e "$HOME/.ssh/allowed_signers" ]; then
+    run touch "$HOME/.ssh/allowed_signers"
+    run chmod 600 "$HOME/.ssh/allowed_signers"
+    warn "Created ~/.ssh/allowed_signers; add the public half of your 1Password signing key."
+  fi
 }
 
-# -----------------------------------------------------------------------------
-# Create ~/.ssh/config.local stub (machine-specific host aliases — LAN IPs,
-# personal hosts — never tracked; included by ssh/config)
-# -----------------------------------------------------------------------------
-setup_ssh_config_local() {
-    local ssh_local="$HOME/.ssh/config.local"
-    if [ -f "$ssh_local" ]; then
-        info "~/.ssh/config.local already exists, skipping"
-        return
-    fi
-
-    mkdir -p "$HOME/.ssh"
-    chmod 700 "$HOME/.ssh"
-    cat > "$ssh_local" <<'EOF'
-# Local SSH host aliases — not tracked in dotfiles repo
-# Add machine-specific Host blocks here (LAN IPs, personal servers, etc.)
-
-# Example:
-# Host myserver
-#   HostName 192.168.1.10
-#   User me
-#   IdentityFile ~/.ssh/myserver
-#   IdentitiesOnly yes
-EOF
-    chmod 600 "$ssh_local"
-
-    success "Created ~/.ssh/config.local"
-}
-
-# -----------------------------------------------------------------------------
-# Setup ~/.ssh/allowed_signers (required for SSH commit signing via 1Password)
-# -----------------------------------------------------------------------------
-setup_allowed_signers() {
-    local allowed_signers="$HOME/.ssh/allowed_signers"
-    if [ -f "$allowed_signers" ]; then
-        info "~/.ssh/allowed_signers already exists, skipping"
-        return
-    fi
-
-    mkdir -p "$HOME/.ssh"
-    # Try to populate from existing gitconfig email + ssh public keys
-    local email
-    email=$(git config --global --get user.email 2>/dev/null || echo "")
-
-    if [ -n "$email" ]; then
-        local key_added=false
-        for pub_key in "$HOME/.ssh/"*.pub; do
-            [ -f "$pub_key" ] || continue
-            echo "${email} $(cat "$pub_key")" >> "$allowed_signers"
-            success "Added $(basename "$pub_key") to ~/.ssh/allowed_signers for $email"
-            key_added=true
-        done
-        if ! $key_added; then
-            # Create empty file so git doesn't error; user fills in manually
-            touch "$allowed_signers"
-            warn "No SSH public keys found. Add your signing key to ~/.ssh/allowed_signers:"
-            warn "  echo \"$email \$(cat ~/.ssh/id_ed25519.pub)\" >> ~/.ssh/allowed_signers"
-        fi
-    else
-        touch "$allowed_signers"
-        warn "git user.email not set. Populate ~/.ssh/allowed_signers manually:"
-        warn "  echo \"you@example.com \$(cat ~/.ssh/id_ed25519.pub)\" >> ~/.ssh/allowed_signers"
-    fi
-
-    chmod 600 "$allowed_signers"
-}
-
-# -----------------------------------------------------------------------------
-# Symlink dotfiles
-# -----------------------------------------------------------------------------
 create_symlinks() {
-    info "Creating symlinks..."
+  info "Linking managed configuration..."
+  link_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+  link_file "$DOTFILES_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
+  link_file "$DOTFILES_DIR/git/hooks" "$HOME/.githooks"
+  link_file "$DOTFILES_DIR/ssh/config" "$HOME/.ssh/config"
+  link_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+  link_file "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+  link_file "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
+  link_file "$DOTFILES_DIR/bat/config" "$HOME/.config/bat/config"
+  link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
+  link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+  link_file "$DOTFILES_DIR/ripgrep/.ripgreprc" "$HOME/.ripgreprc"
+  link_file "$DOTFILES_DIR/editorconfig/.editorconfig" "$HOME/.editorconfig"
+  link_file "$DOTFILES_DIR/sqlfluff/.sqlfluff" "$HOME/.sqlfluff"
+  link_file "$DOTFILES_DIR/mise/config.toml" "$HOME/.config/mise/config.toml"
+  link_file "$DOTFILES_DIR/atuin/config.toml" "$HOME/.config/atuin/config.toml"
+  link_file "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/settings.json"
+  link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
+  setup_vscode_settings
+  link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"
+  link_file "$DOTFILES_DIR/bin/op-ssh-sign" "$HOME/.local/bin/op-ssh-sign"
 
-    link_file "$DOTFILES_DIR/zsh/.zshrc"                "$HOME/.zshrc"
-    link_file "$DOTFILES_DIR/git/.gitconfig"            "$HOME/.gitconfig"
-    link_file "$DOTFILES_DIR/git/.gitignore_global"     "$HOME/.gitignore_global"
-    link_file "$DOTFILES_DIR/starship/starship.toml"    "$HOME/.config/starship.toml"
-    link_file "$DOTFILES_DIR/tmux/.tmux.conf"           "$HOME/.tmux.conf"
-    link_file "$DOTFILES_DIR/nvim"                      "$HOME/.config/nvim"
-    link_file "$DOTFILES_DIR/editorconfig/.editorconfig" "$HOME/.editorconfig"
-    link_file "$DOTFILES_DIR/ripgrep/.ripgreprc"        "$HOME/.ripgreprc"
-    link_file "$DOTFILES_DIR/git/hooks"                 "$HOME/.githooks"
-    link_file "$DOTFILES_DIR/bin/tmux-sessionizer"      "$HOME/.local/bin/tmux-sessionizer"
-    link_file "$DOTFILES_DIR/bin/op-ssh-sign"           "$HOME/.local/bin/op-ssh-sign"
-    link_file "$DOTFILES_DIR/bin/render-aws-config"     "$HOME/.local/bin/render-aws-config"
-    link_file "$DOTFILES_DIR/yazi/yazi.toml"            "$HOME/.config/yazi/yazi.toml"
-    link_file "$DOTFILES_DIR/mise/config.toml"          "$HOME/.config/mise/config.toml"
-
-    # Claude Code: only the portable, non-sensitive pieces (global settings +
-    # custom subagents). Everything else under ~/.claude (conversation
-    # history, session state, shell snapshots) stays local — never tracked.
-    link_file "$DOTFILES_DIR/claude/settings.json"      "$HOME/.claude/settings.json"
-    link_file "$DOTFILES_DIR/claude/agents"             "$HOME/.claude/agents"
-
-    link_file "$DOTFILES_DIR/bat/config"                "$HOME/.config/bat/config"
-    mkdir -p "$HOME/.config/bat/themes"
-    link_file "$DOTFILES_DIR/bat/themes/GitHub Dark.tmTheme" "$HOME/.config/bat/themes/GitHub Dark.tmTheme"
-
-    # Rebuild bat theme cache
-    if command_exists bat; then
-        bat cache --build &>/dev/null || true
-    fi
-
-    # lazygit's and VS Code's config dirs differ by OS
-    if [ "$OS" = "macos" ]; then
-        link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
-        local vscode_dir="$HOME/Library/Application Support/Code/User"
-    else
-        link_file "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-        local vscode_dir="$HOME/.config/Code/User"
-    fi
-    mkdir -p "$vscode_dir"
-    link_file "$DOTFILES_DIR/vscode/settings.json" "$vscode_dir/settings.json"
-
-    # Antigravity is a VS Code fork and shares the exact same settings —
-    # single source of truth, both editors symlink to vscode/settings.json
-    if [ "$OS" = "macos" ]; then
-        local antigravity_dir="$HOME/Library/Application Support/Antigravity/User"
-        mkdir -p "$antigravity_dir"
-        link_file "$DOTFILES_DIR/vscode/settings.json" "$antigravity_dir/settings.json"
-    fi
-
-    # Gemini CLI settings
-    mkdir -p "$HOME/.gemini"
-    link_file "$DOTFILES_DIR/gemini/settings.json" "$HOME/.gemini/settings.json"
-
-    # SSH config (no secrets — the private key itself is never touched)
-    mkdir -p "$HOME/.ssh"
-    chmod 700 "$HOME/.ssh"
-    link_file "$DOTFILES_DIR/ssh/config" "$HOME/.ssh/config"
-    chmod 600 "$HOME/.ssh/config"
-
-    success "All symlinks created"
-
-    # Rebuild bat's theme cache so the custom "GitHub Dark" theme is picked up
-    if command_exists bat; then
-        bat cache --build &>/dev/null || true
-    fi
+  if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
+    link_file "$DOTFILES_DIR/mise/mise.lock" "$HOME/.config/mise/mise.lock"
+  fi
+  if [ -d "$DOTFILES_DIR/mise/.mise/locks" ]; then
+    link_file "$DOTFILES_DIR/mise/.mise" "$HOME/.config/mise/.mise"
+  fi
 }
 
-# -----------------------------------------------------------------------------
-# Install CLI tools declared in mise/config.toml (delta, lazygit, lazydocker,
-# yq, gitleaks, tree-sitter, yazi, bottom, atuin, vivid, pnpm, bun, uv, plus
-# python/node/go/rust). Runs after create_symlinks so mise picks up the
-# symlinked ~/.config/mise/config.toml as its global config.
-# -----------------------------------------------------------------------------
 install_mise_tools() {
-    if ! command_exists mise; then
-        warn "mise not found, skipping mise-managed tool install"
-        return
-    fi
+  if ! command_exists mise; then
+    warn "mise is unavailable; skipping managed runtimes."
+    return
+  fi
 
-    info "Installing tools declared in mise/config.toml (checksum-verified)..."
-    mise install -y
-    success "mise tools installed"
+  run mise trust -y "$HOME/.config/mise/config.toml"
+  if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then
+    # The lock pins every resolved version. Mise's dotnet-tool backend does
+    # not emit artifact URLs, so strict --locked mode cannot install those
+    # entries even though their versions are present in the lockfile.
+    run mise install -y
+  else
+    warn "mise/mise.lock is not present; resolving tools without a lockfile."
+    run mise install -y
+  fi
 }
 
-# -----------------------------------------------------------------------------
-# Install global npm CLIs (Claude Code, Gemini CLI, AWS CDK). Runs after
-# install_mise_tools so these land under mise's node, not Homebrew's — mise
-# is the only reliably-installed node on this script (see mise/config.toml).
-# -----------------------------------------------------------------------------
-install_global_npm_clis() {
-    if ! command_exists npm; then
-        warn "npm not found, skipping global CLI install"
-        return
-    fi
+install_gh_extensions() {
+  if ! command_exists gh || ! gh auth status >/dev/null 2>&1; then
+    warn "GitHub CLI is not authenticated; skipping extensions."
+    return
+  fi
 
-    local sudo_cmd=""
-    [ "$OS" = "debian" ] && sudo_cmd="sudo"
-
-    if ! command_exists claude; then
-        info "Installing Claude Code..."
-        $sudo_cmd npm install -g @anthropic-ai/claude-code || warn "Claude Code install failed"
+  while IFS= read -r extension; do
+    if ! gh extension list | awk '{print $1}' | grep -qx "$extension"; then
+      run gh extension install "$extension"
     fi
-
-    if ! command_exists gemini; then
-        info "Installing Gemini CLI..."
-        $sudo_cmd npm install -g @google/gemini-cli || warn "Gemini CLI install failed"
-    fi
-
-    if ! command_exists cdk; then
-        info "Installing AWS CDK..."
-        $sudo_cmd npm install -g aws-cdk || warn "AWS CDK install failed"
-    fi
+  done < <(manifest_entries "$DOTFILES_DIR/packages/gh-extensions.txt")
 }
 
-# -----------------------------------------------------------------------------
-# Install zinit (zsh plugin manager)
-# -----------------------------------------------------------------------------
-install_zinit() {
-    local zinit_home="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
-    if [ -d "$zinit_home" ]; then
-        success "zinit already installed"
-        return
-    fi
+install_shell_and_editor_plugins() {
+  local zinit_home="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
+  local tpm_dir="$HOME/.tmux/plugins/tpm"
 
-    info "Installing zinit..."
-    mkdir -p "$(dirname "$zinit_home")"
-    git clone https://github.com/zdharma-continuum/zinit.git "$zinit_home"
-    success "zinit installed"
+  if [ ! -d "$zinit_home" ]; then
+    run mkdir -p "$(dirname "$zinit_home")"
+    run git clone https://github.com/zdharma-continuum/zinit.git "$zinit_home"
+  fi
+
+  if [ ! -d "$tpm_dir" ]; then
+    run git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+  fi
+
+  if [ -x "$tpm_dir/bin/install_plugins" ]; then
+    run "$tpm_dir/bin/install_plugins"
+  fi
+
+  if command_exists nvim; then
+    run nvim --headless "+Lazy! restore" +qa
+  fi
+
+  if command_exists bat; then
+    run bat cache --build
+  fi
 }
 
-# -----------------------------------------------------------------------------
-# Install TPM (tmux plugin manager)
-# -----------------------------------------------------------------------------
-install_tpm() {
-    local tpm_dir="$HOME/.tmux/plugins/tpm"
-    if [ -d "$tpm_dir" ]; then
-        success "TPM already installed"
-    else
-        info "Installing TPM (Tmux Plugin Manager)..."
-        git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
-    fi
-
-    info "Installing tmux plugins declared in .tmux.conf..."
-    "$tpm_dir/bin/install_plugins" &>/dev/null || true
-    success "tmux plugins installed"
-}
-
-# -----------------------------------------------------------------------------
-# Install neovim plugins
-# -----------------------------------------------------------------------------
-install_nvim_plugins() {
-    if ! command_exists nvim; then
-        warn "nvim not found, skipping plugin install"
-        return
-    fi
-
-    info "Installing neovim plugins (this may produce compilation output)..."
-    nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
-    success "Neovim plugins installed"
-}
-
-# -----------------------------------------------------------------------------
-# Install VS Code extensions
-# -----------------------------------------------------------------------------
 install_vscode_extensions() {
-    if ! command_exists code; then
-        warn "VS Code (code) command not found, skipping extension install"
-        return
+  local insiders_cli="/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code"
+  local -a labels=()
+  local -a clis=()
+
+  if command_exists code; then
+    labels+=("stable")
+    clis+=("$(command -v code)")
+  fi
+  if [ -x "$insiders_cli" ]; then
+    labels+=("insiders")
+    clis+=("$insiders_cli")
+  fi
+
+  if [ "${#clis[@]}" -eq 0 ]; then
+    warn "VS Code CLIs are unavailable; skipping extensions."
+    return
+  fi
+
+  local index label cli inventory extension extension_id installed_version
+  for index in "${!clis[@]}"; do
+    label="${labels[$index]}"
+    cli="${clis[$index]}"
+    inventory="$BACKUP_DIR/vscode-extensions-$label.txt"
+
+    if $DRY_RUN; then
+      info "Would back up the $label VS Code extension inventory to $inventory"
+    else
+      mkdir -p "$BACKUP_DIR"
+      "$cli" --list-extensions --show-versions | sort > "$inventory"
     fi
 
-    info "Installing VS Code extensions..."
-    while read -r extension; do
-        if [ -n "$extension" ]; then
-            code --install-extension "$extension" --force &>/dev/null || true
+    while IFS= read -r extension; do
+      extension_id="${extension%%@*}"
+      installed_version="$(
+        "$cli" --list-extensions --show-versions |
+          awk -F@ -v id="$extension_id" 'tolower($1) == tolower(id) { print $2; exit }'
+      )"
+      if [ "$installed_version" = "${extension#*@}" ]; then
+        success "$label extension already pinned: $extension"
+      else
+        run "$cli" --install-extension "$extension" --force
+      fi
+    done < <(manifest_entries "$DOTFILES_DIR/vscode/extensions.txt")
+
+    while IFS= read -r extension_id; do
+      if ! manifest_entries "$DOTFILES_DIR/vscode/extensions.txt" |
+        cut -d@ -f1 |
+        grep -Fxiq "$extension_id"; then
+        if "$cli" --list-extensions | grep -Fxiq "$extension_id"; then
+          run "$cli" --uninstall-extension "$extension_id"
         fi
-    done < "$DOTFILES_DIR/vscode/extensions.txt"
-    success "VS Code extensions installed"
+      fi
+    done < <("$cli" --list-extensions | LC_ALL=C sort -r)
+  done
 }
 
-# =============================================================================
-# Main
-# =============================================================================
 main() {
-    echo ""
-    echo "========================================="
-    echo "  Dotfiles Installer"
-    echo "========================================="
-    echo ""
+  parse_args "$@"
+  require_macos
 
-    detect_os
+  info "Bootstrapping the macOS work environment from $DOTFILES_DIR"
+  install_homebrew
+  setup_local_files
+  create_symlinks
+  install_mise_tools
+  install_gh_extensions
+  install_shell_and_editor_plugins
+  install_vscode_extensions
 
-    # Install packages
-    if [ "$OS" = "macos" ]; then
-        install_packages_macos
-        setup_terminal_theme_macos
-    else
-        install_packages_debian
-    fi
-
-    # Setup local config files (before symlinking overwrites configs)
-    setup_gitconfig_local
-    setup_zshrc_local
-    setup_tmux_local
-    setup_ssh_config_local
-    # Create symlinks (activates .gitconfig.local via the include directive)
-    create_symlinks
-
-    # Needs the symlinked ~/.gitconfig in place so user.email resolves
-    setup_allowed_signers
-
-    # Needs the symlinked ~/.config/mise/config.toml in place
-    install_mise_tools
-
-    # Needs mise's node on PATH (Homebrew's node isn't installed by this
-    # script anymore — mise is the one reliable source of node here)
-    install_global_npm_clis
-
-    # Install plugin managers
-    install_zinit
-    install_tpm
-
-    # Install extensions/plugins
-    install_vscode_extensions
-    install_nvim_plugins
-
-    # Apply macOS system defaults (opinionated; review macos/defaults.sh first —
-    # it disables the Gatekeeper "downloaded from the internet" warning, among
-    # other changes). Opt in explicitly rather than applying silently.
-    if [ "$OS" = "macos" ] && [ -f "$DOTFILES_DIR/macos/defaults.sh" ]; then
-        read -r -p "Apply macOS system defaults from macos/defaults.sh? [y/N] " apply_defaults
-        if [[ "$apply_defaults" =~ ^[Yy]$ ]]; then
-            info "Applying macOS system defaults..."
-            bash "$DOTFILES_DIR/macos/defaults.sh"
-        else
-            info "Skipped macOS system defaults. Run macos/defaults.sh manually if you want them."
-        fi
-    fi
-
-    echo ""
-    echo "========================================="
-    success "Dotfiles installation complete!"
-    echo "========================================="
-    echo ""
-    info "Backups (if any) are in: $BACKUP_DIR"
-    info "Personal git config:     ~/.gitconfig.local"
-    info "Local zsh overrides:     ~/.zshrc.local"
-    info "Local tmux overrides:    ~/.tmux.local.conf"
-    info "SSH signing:             ~/.ssh/allowed_signers"
-    echo ""
-    info "Run 'exec zsh' to reload your shell"
-    info "In tmux, press Ctrl-a + I to install tmux plugins"
-    info "In nvim, run :MasonUpdate to refresh LSP servers"
-    info "AWS: run 'aws configure' or 'aws sso login' to authenticate"
-    info "mise: run 'mise install' to install global runtimes (python, node, go, rust)"
-    info "git: run 'git maintenance start' in large repos for background optimizations"
-    echo ""
+  success "Bootstrap complete."
+  info "Backups, if any, are in $BACKUP_DIR"
+  info "Review the *.local files and ~/.config/dotfiles/secrets.env before use."
+  info "Start Colima when needed with: colima start"
+  info "Terminal.app and Warp appearance remain manual choices."
+  info "Reload the shell with: exec zsh"
 }
 
 main "$@"

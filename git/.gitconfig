@@ -4,95 +4,94 @@
 # =============================================================================
 
 [include]
-    path = ~/.gitconfig.local
+  path = ~/.gitconfig.local
 
 [core]
-    editor = nvim
-    autocrlf = input
-    excludesfile = ~/.gitignore_global
-    pager = delta
-    whitespace = fix
-    hooksPath = ~/.githooks
+  editor = nvim
+  autocrlf = input
+  excludesfile = ~/.gitignore_global
+  pager = delta
+  whitespace = fix
+  hooksPath = ~/.githooks
 
 [filter "lfs"]
-    clean = git-lfs clean -- %f
-    smudge = git-lfs smudge -- %f
-    process = git-lfs filter-process
-    required = true
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
 
 [init]
-    defaultBranch = main
+  defaultBranch = main
 
 [pull]
-    rebase = true
+  rebase = true
 
 [push]
-    default = current
-    autoSetupRemote = true
-    followTags = true
+  default = current
+  autoSetupRemote = true
+  followTags = true
 
 [fetch]
-    prune = true
-    pruneTags = true
+  prune = true
+  pruneTags = true
 
 [rebase]
-    autoStash = true
-    autoSquash = true
+  autoStash = true
+  autoSquash = true
 
 [merge]
-    conflictStyle = zdiff3
-    tool = nvim
+  conflictStyle = zdiff3
+  tool = nvim
 
 [diff]
-    algorithm = histogram
-    colorMoved = default
-    renames = copies
+  algorithm = histogram
+  colorMoved = default
+  renames = copies
 
 [interactive]
-    diffFilter = delta --color-only
+  diffFilter = delta --color-only
 
 [delta]
-    navigate = true
-    side-by-side = true
-    line-numbers = true
-    syntax-theme = "GitHub Dark"
-    plus-style = "syntax #033a16"
-    minus-style = "syntax #3c1618"
+  navigate = true
+  side-by-side = true
+  line-numbers = true
+  syntax-theme = "GitHub Dark"
+  plus-style = "syntax #033a16"
+  minus-style = "syntax #3c1618"
 
 [rerere]
-    enabled = true
+  enabled = true
 
 [column]
-    ui = auto
+  ui = auto
 
 [branch]
-    sort = -committerdate
+  sort = -committerdate
 
 [tag]
-    sort = -version:refname
+  sort = -version:refname
 
 [alias]
-    st = status
-    co = checkout
-    br = branch
-    ci = commit
-    unstage = reset HEAD --
-    discard = checkout --
-    last = log -1 HEAD
-    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-    wip = "!git add -A && git commit -m 'WIP [skip ci]'"
-    undo = reset --soft HEAD~1
-    amend = commit --amend --no-edit
-    contributors = shortlog -sn --no-merges
-    branches = branch --sort=-committerdate --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]'
-    cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
-    aliases = config --get-regexp ^alias\\.
+  st = status
+  co = checkout
+  br = branch
+  ci = commit
+  unstage = reset HEAD --
+  discard = checkout --
+  last = log -1 HEAD
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  undo = reset --soft HEAD~1
+  amend = commit --amend --no-edit
+  contributors = shortlog -sn --no-merges
+  branches = branch --sort=-committerdate --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]'
+  cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
+  aliases = config --get-regexp ^alias\\.
 [gpg]
-	format = ssh
+  format = ssh
 [gpg "ssh"]
-	program = op-ssh-sign
-	allowedSignersFile = ~/.ssh/allowed_signers
+  program = op-ssh-sign
+  allowedSignersFile = ~/.ssh/allowed_signers
 
 [maintenance]
-    auto = true
-    strategy = incremental
+  auto = true
+  strategy = incremental

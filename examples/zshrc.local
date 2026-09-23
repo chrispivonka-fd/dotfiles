@@ -1,0 +1,7 @@
+# Machine-local shell configuration. Installed as ~/.zshrc.local when absent.
+# Keep internal hostnames, project paths, profile names, and secret references
+# in the local copy only.
+
+# export LOCAL_AI_DIR="$HOME/path/to/local-ai-project"
+# export AWS_PROFILE="local-profile-name"
+# alias work-project='cd "$HOME/path/to/project"'
