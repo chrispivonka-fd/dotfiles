@@ -42,4 +42,3 @@ coverage/
 # Sanitized examples are intentionally public.
 !examples/
 !examples/*.local
-!examples/secrets.env.example

@@ -1,6 +1,6 @@
-# Machine-local shell configuration. Installed as ~/.zshrc.local when absent.
-# Keep internal hostnames, project paths, profile names, and secret references
-# in the local copy only.
+# Optional machine-local shell configuration for ~/.zshrc.local.
+# Create this optional file only for settings that genuinely differ by machine.
+# Secrets are loaded from the 1Password Environment by tracked zsh config.
 
 # export LOCAL_AI_DIR="$HOME/path/to/local-ai-project"
 # export AWS_PROFILE="local-profile-name"
