@@ -45,7 +45,7 @@ return {
         return not vim.tbl_contains(installed, lang)
       end, ensure_installed)
       if #missing > 0 then
-        ts.install(missing)
+        ts.install(missing):wait(300000)
       end
 
       -- Highlighting/indent/folding are opt-in per buffer now (nothing is

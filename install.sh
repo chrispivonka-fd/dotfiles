@@ -260,7 +260,7 @@ install_shell_and_editor_plugins() {
   fi
 
   if command_exists nvim; then
-    run nvim --headless "+Lazy! sync" +qa
+    run nvim --headless "+Lazy! restore" +qa
   fi
 
   if command_exists bat; then

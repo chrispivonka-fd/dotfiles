@@ -71,7 +71,8 @@ Each package has one owner to avoid duplicate installations:
 - Homebrew formulae: stable macOS command-line applications such as Colima,
   Docker CLI, Git, shell tools, database clients, linters, and scanners.
 - Homebrew casks: GUI applications and vendor-native macOS tools.
-- Mise: language runtimes, package managers, and portable developer CLIs.
+- Mise: language runtimes, package managers, and portable developer CLIs,
+  including the Tree-sitter CLI used to build Neovim parsers.
 - Mac App Store: Xcode.
 - Project repositories: project-specific runtime pins and tools such as
   CSharpier in a .NET tool manifest.
