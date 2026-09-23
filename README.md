@@ -1,13 +1,13 @@
 # Work dotfiles
 
-Public, macOS-only dotfiles for a work development machine. This fork shares
+macOS-only dotfiles for a work development machine. This fork shares
 its roots with the personal dotfiles but is free to diverge where enterprise
 requirements differ—most notably, it uses Colima instead of OrbStack.
 
-The repository contains only portable configuration, placeholders, and tool
-manifests. Internal hostnames, account names, project paths, private package
-feeds, AWS profiles, credentials, and real 1Password references belong in
-ignored local files.
+The repository contains portable configuration, placeholders, and tool
+manifests. Machine identities, account names, private project paths, AWS
+profiles, and private package credentials remain local. Long-lived credentials
+are supplied at runtime by 1Password.
 
 ## Bootstrap
 
@@ -48,27 +48,33 @@ the unmanaged TypeScript Native Preview extension is excluded so sync cannot
 reinstall it over the work manifest. Existing local settings and extension
 inventories are backed up before they are changed.
 
-## Public versus local configuration
+## Tracked versus local configuration
 
-The installer creates these ignored files from sanitized examples when they
-do not already exist:
+The installer creates the required ignored files from sanitized examples when
+they do not already exist. `~/.zshrc.local` is not created automatically; it
+remains available as a manual override when a machine genuinely needs one:
 
 | Local file | Purpose |
 | --- | --- |
-| `~/.zshrc.local` | Private paths, aliases, profile names, and environment setup |
+| `~/.zshrc.local` | Optional machine-specific paths, aliases, and profile names |
 | `~/.gitconfig.local` | Work identity and SSH signing public key |
 | `~/.ssh/config.local` | Internal SSH hosts and connection details |
 | `~/.tmux.conf.local` | Machine-specific tmux overrides |
-| `~/.config/dotfiles/secrets.env` | 1Password references, never secret values |
 | `~/.config/dotfiles/hooks.local/` | Private, optional hook extensions |
 
-Long-lived secrets and SSH private keys belong in 1Password. A local secrets
-file should contain references such as `op://VAULT/ITEM/FIELD`, not resolved
-values. Inject them only into the process that needs them:
+Long-lived secrets and SSH private keys belong in 1Password. The tracked
+`zsh/1password.zsh` loader reads the local `My Local` Environment mounted by
+1Password at `~/.env` and exports only the seven expected variables into each
+new zsh session. The mounted file is a mode-0600 FIFO; resolved values are not
+stored in this repository or as plaintext on disk. Concurrent Warp tabs are
+serialized, and a missing or incomplete Environment leaves all seven variables
+unset rather than retaining stale inherited values.
 
-```sh
-op run --env-file="$HOME/.config/dotfiles/secrets.env" -- your-command
-```
+On a new Mac, open 1Password, connect the `My Local` Environment to the local
+`~/.env` path, enable 1Password at login, and start a fresh shell. This setup
+intentionally exposes the variables to the shell and every process launched
+from it. Existing shells retain their current environment; run `exec zsh` to
+reload after changing `My Local`.
 
 AWS profiles and provider-native sessions remain local. This repository does
 not render or track `~/.aws/config` or `~/.aws/credentials`.

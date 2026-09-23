@@ -200,11 +200,9 @@ install_homebrew() {
 }
 
 setup_local_files() {
-  copy_local_template "$DOTFILES_DIR/examples/zshrc.local" "$HOME/.zshrc.local" 600
   copy_local_template "$DOTFILES_DIR/examples/gitconfig.local" "$HOME/.gitconfig.local" 600
   copy_local_template "$DOTFILES_DIR/examples/ssh-config.local" "$HOME/.ssh/config.local" 600
   copy_local_template "$DOTFILES_DIR/examples/tmux.conf.local" "$HOME/.tmux.conf.local" 600
-  copy_local_template "$DOTFILES_DIR/examples/secrets.env.example" "$HOME/.config/dotfiles/secrets.env" 600
 
   run mkdir -p "$HOME/.config/dotfiles/hooks.local"
   run chmod 700 "$HOME/.ssh" "$HOME/.config/dotfiles" "$HOME/.config/dotfiles/hooks.local"
@@ -377,7 +375,7 @@ main() {
 
   success "Bootstrap complete."
   info "Backups, if any, are in $BACKUP_DIR"
-  info "Review the *.local files and ~/.config/dotfiles/secrets.env before use."
+  info "Review the optional *.local files before use."
   info "Start Colima when needed with: colima start"
   info "Terminal.app and Warp appearance remain manual choices."
   info "Reload the shell with: exec zsh"

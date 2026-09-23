@@ -51,7 +51,10 @@ jobs:
             git/hooks/pre-push \
             git/hooks/lib/common.sh \
             scripts/test-git-hooks.sh
-          zsh -n zsh/.zshrc zsh/aliases.zsh
+          zsh -n zsh/.zshrc
+          zsh -n zsh/1password.zsh
+          zsh -n zsh/aliases.zsh
+          zsh -n examples/zshrc.local
           shellcheck -x \
             install.sh \
             bin/op-ssh-sign \

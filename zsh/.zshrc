@@ -173,6 +173,9 @@ command -v mise &>/dev/null && eval "$(mise activate zsh)"
 # --- Direnv (Project environment variables) ----------------------------------
 command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
 
+# --- 1Password local development environment ---------------------------------
+[ -f "$DOTFILES_DIR/zsh/1password.zsh" ] && source "$DOTFILES_DIR/zsh/1password.zsh"
+
 # --- Ripgrep config ----------------------------------------------------------
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
