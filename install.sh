@@ -233,6 +233,9 @@ create_symlinks() {
   link_file "$DOTFILES_DIR/mise/config.toml" "$HOME/.config/mise/config.toml"
   link_file "$DOTFILES_DIR/atuin/config.toml" "$HOME/.config/atuin/config.toml"
   link_file "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/settings.json"
+  link_file "$DOTFILES_DIR/claude/settings-automode.json" "$HOME/.claude/settings-automode.json"
+  link_file "$DOTFILES_DIR/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+  link_file "$DOTFILES_DIR/claude/hooks" "$HOME/.claude/hooks"
   link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
   setup_vscode_settings
   link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"

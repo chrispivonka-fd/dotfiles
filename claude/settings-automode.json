@@ -1,0 +1,144 @@
+{
+  "respectGitignore": true,
+  "env": {
+    "DISABLE_TELEMETRY": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "30000"
+  },
+  "attribution": {
+    "commit": "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
+    "pr": "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+  },
+  "permissions": {
+    "additionalDirectories": ["~/GitHub/"],
+    "allow": [],
+    "ask": [
+      "Bash(aws *)",
+      "Bash(terraform apply*)",
+      "Bash(terraform destroy*)",
+      "Bash(pulumi up*)",
+      "Bash(pulumi destroy*)",
+      "Bash(npm publish*)",
+      "Bash(pnpm publish*)",
+      "Bash(yarn publish*)",
+      "Bash(docker compose down*)",
+      "Bash(docker system prune*)",
+      "Bash(rm -rf*)",
+      "Bash(rm -fr*)",
+      "Bash(chmod 777*)",
+      "Bash(chmod -R 777*)",
+      "Bash(git checkout*)",
+      "Bash(git restore*)",
+      "Bash(git reset*)",
+      "Bash(git clean*)",
+      "Bash(git stash drop*)",
+      "Bash(git stash clear*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(curl * | sh*)",
+      "Bash(curl * | bash*)",
+      "Bash(curl * | zsh*)",
+      "Bash(wget * | sh*)",
+      "Bash(wget * | bash*)"
+    ],
+    "deny": [
+      "WebSearch",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.pfx)",
+      "Read(./**/.git-credentials)",
+      "Read(./**/.netrc)",
+      "Read(./**/id_rsa*)",
+      "Read(./**/id_ed25519*)",
+      "Read(./**/id_ecdsa*)",
+      "Read(./**/id_dsa*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./**/.env.local)",
+      "Read(./**/.env.*.local)",
+      "Read(./**/.env.production)",
+      "Read(./**/.env.development)",
+      "Read(./**/.env.staging)",
+      "Read(./**/.env.test)",
+      "Read(./**/.env.qa)",
+      "Read(./**/.env.preview)",
+      "Read(./**/.ssh/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.npmrc)",
+      "Bash(sudo:*)",
+      "Bash(su:*)",
+      "Bash(shutdown:*)",
+      "Bash(reboot:*)",
+      "Bash(mkfs:*)",
+      "Bash(dd:*)"
+    ],
+    "defaultMode": "auto"
+  },
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "Primary use: software development across multiple microservices, infrastructure automation with Terraform, and data engineering work.",
+      "Source control: GitHub. The user clones repos into ~/GitHub/ on their local machine. Source control org(s) are whatever the starting repo's git remotes point to — treat those orgs as trusted.",
+      "Local development workspace: ~/GitHub/ contains many sibling dev repositories the user actively works across. Reading/searching across these sibling repos is routine and expected.",
+      "Cloud provider: AWS. Account-scoped inspection (describe/list/get) without destructive flags is routine. Cross-account or production writes are not covered here and remain gated.",
+      "Key internal services: Jira at fandango.atlassian.net (MCP-connected), Datadog, MongoDB Atlas, AWS CloudWatch — reads against these are routine.",
+      "Local dotfiles repo at ~/GitHub/dotfiles manages shell, Git, editor, and Claude Code settings. Edits to files in this repo are the user's intended way to change their own tooling, but only when the user explicitly directs such edits — otherwise Self-Modification BLOCK still applies."
+    ],
+    "allow": [
+      "$defaults",
+      "Cross-Repo Reads In GitHub Dir: Read-only commands (`ls`, `find` without `-exec`/`-delete`, `cat`, `head`, `tail`, `wc`, `file`, `stat`, `tree`, `du`, targeted `grep`/`rg` for specific strings) across sibling repos under ~/GitHub/ are always allowed. The user maintains many related dev repos and routinely inspects across them; this overrides the 'Local Operations' scope restriction FOR READS ONLY. Does NOT cover writes, deletes, executions, `find -exec`/`-delete`, reads of credential stores (`~/.ssh/`, `~/.aws/`, `~/.config/gh/`, `~/.netrc`, `~/.docker/config.json`, keychain/browser dirs), any `.env*`/`credentials*`/`*.pem`/`*.key` files, or broad credential-hunting patterns (Credential Exploration BLOCK still applies).",
+      "Terraform Read-Only Checks: `terraform plan`, `terraform validate`, `terraform fmt -check`, `terraform show`, `tflint`, and `terraform state list`/`state show` in any repo's infra directory are allowed. `terraform init`, `terraform fmt` without `-check`, `terraform apply`, `terraform destroy`, `terraform import`, `terraform state rm`/`state mv`, and any command with `-auto-approve` are NOT covered — Blind Apply and Production Deploy BLOCKs still apply."
+    ],
+    "soft_deny": ["$defaults"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HOOK_ROOT=\"$HOME/.claude/hooks\"; [ -d \"$HOOK_ROOT\" ] || HOOK_ROOT=\"$(dirname \"$(readlink \"$HOME/.claude/settings-automode.json\")\")/hooks\"; \"$HOOK_ROOT/block-dangerous-git.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HOOK_ROOT=\"$HOME/.claude/hooks\"; [ -d \"$HOOK_ROOT\" ] || HOOK_ROOT=\"$(dirname \"$(readlink \"$HOME/.claude/settings-automode.json\")\")/hooks\"; python3 \"$HOOK_ROOT/security_reminder_hook.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HOOK_ROOT=\"$HOME/.claude/hooks\"; [ -d \"$HOOK_ROOT\" ] || HOOK_ROOT=\"$(dirname \"$(readlink \"$HOME/.claude/settings-automode.json\")\")/hooks\"; \"$HOOK_ROOT/scan-written-file.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "language": "english",
+  "alwaysThinkingEnabled": true,
+  "verbose": true,
+  "mcpServers": {
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    }
+  }
+}

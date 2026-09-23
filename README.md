@@ -14,8 +14,8 @@ are supplied at runtime by 1Password.
 Review the proposed changes first:
 
 ```sh
-git clone git@github.com:chrispivonka-fd/dotfiles_.git ~/GitHub/dotfiles_
-cd ~/GitHub/dotfiles_
+git clone git@github.com:chrispivonka-fd/dotfiles.git ~/GitHub/dotfiles
+cd ~/GitHub/dotfiles
 ./install.sh --dry-run
 ```
 
@@ -78,6 +78,14 @@ reload after changing `My Local`.
 
 AWS profiles and provider-native sessions remain local. This repository does
 not render or track `~/.aws/config` or `~/.aws/credentials`.
+
+The default Claude profile remains `~/.claude/settings.json`. The previous
+automode profile is retained at `~/.claude/settings-automode.json`, together
+with its status line and safety hooks. Use it for an individual session with:
+
+```sh
+claude --settings "$HOME/.claude/settings-automode.json"
+```
 
 ## Tool ownership
 

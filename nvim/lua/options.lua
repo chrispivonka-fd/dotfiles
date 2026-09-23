@@ -19,7 +19,7 @@ local indentation = vim.api.nvim_create_augroup("LanguageIndentation", { clear =
 
 vim.api.nvim_create_autocmd("FileType", {
   group = indentation,
-  pattern = { "python", "rust", "java", "cs", "fsharp", "vb" },
+  pattern = { "python", "rust", "cs", "fsharp", "vb" },
   callback = function()
     vim.opt_local.expandtab = true
     vim.opt_local.shiftwidth = 4

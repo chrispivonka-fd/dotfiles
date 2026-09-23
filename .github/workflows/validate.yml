@@ -32,7 +32,7 @@ jobs:
           persist-credentials: false
 
       - name: Install validation tools
-        run: brew install actionlint gitleaks shellcheck yq zizmor
+        run: brew install actionlint gitleaks jq shellcheck yq zizmor
 
       - name: Validate workflow security and syntax
         run: |
@@ -45,6 +45,9 @@ jobs:
             install.sh \
             bin/op-ssh-sign \
             bin/tmux-sessionizer \
+            claude/statusline-command.sh \
+            claude/hooks/block-dangerous-git.sh \
+            claude/hooks/scan-written-file.sh \
             git/hooks/commit-msg \
             git/hooks/post-merge \
             git/hooks/pre-commit \
@@ -59,6 +62,9 @@ jobs:
             install.sh \
             bin/op-ssh-sign \
             bin/tmux-sessionizer \
+            claude/statusline-command.sh \
+            claude/hooks/block-dangerous-git.sh \
+            claude/hooks/scan-written-file.sh \
             git/hooks/commit-msg \
             git/hooks/post-merge \
             git/hooks/pre-commit \
@@ -69,6 +75,7 @@ jobs:
       - name: Validate configuration files
         run: |
           python3 - <<'PY'
+          import ast
           import json
           import tomllib
           from pathlib import Path
@@ -83,14 +90,51 @@ jobs:
 
           for path in (
               Path("claude/settings.json"),
+              Path("claude/settings-automode.json"),
               Path("templates/devcontainers/base/.devcontainer/devcontainer.json"),
           ):
               with path.open(encoding="utf-8") as stream:
                   json.load(stream)
+
+          ast.parse(
+              Path("claude/hooks/security_reminder_hook.py").read_text(
+                  encoding="utf-8"
+              )
+          )
           PY
           yq eval '.' templates/devcontainers/databases/compose.yaml >/dev/null
           empty_tree="$(git hash-object -t tree /dev/null)"
           git diff --check "$empty_tree" HEAD --
+
+      - name: Test Claude Git guardrails
+        run: |
+          assert_allowed() {
+            jq -nc --arg command "$1" '{tool_input: {command: $command}}' |
+              claude/hooks/block-dangerous-git.sh >/dev/null
+          }
+          assert_blocked() {
+            if jq -nc --arg command "$1" '{tool_input: {command: $command}}' |
+              claude/hooks/block-dangerous-git.sh >/dev/null 2>&1; then
+              echo "Expected command to be blocked: $1" >&2
+              return 1
+            fi
+          }
+
+          assert_allowed 'git status'
+          assert_allowed 'git checkout feature/topic'
+          assert_allowed 'git checkout feature.topic'
+          assert_allowed 'git checkout release-1.2'
+          assert_allowed 'git checkout src/file.js'
+          assert_allowed 'git checkout README'
+          assert_allowed 'git stash list'
+          assert_blocked 'git reset --hard HEAD~1'
+          assert_blocked 'git checkout -- src/file.js'
+          assert_blocked 'git checkout .'
+          assert_blocked 'git restore README.md'
+          assert_blocked 'git stash drop'
+          assert_blocked 'git stash clear'
+          assert_blocked 'git push --force'
+          assert_blocked 'git commit --no-verify'
 
       - name: Test Git hooks
         run: ./scripts/test-git-hooks.sh

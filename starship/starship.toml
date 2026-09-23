@@ -6,7 +6,7 @@
 palette = "github_dark"
 
 format = """
-$os $directory$git_branch$git_status$python$nodejs$rust$golang$java$docker_context$aws$kubernetes$terraform$cmd_duration$jobs$character"""
+$os $directory$git_branch$git_status$python$nodejs$rust$golang$docker_context$aws$terraform$cmd_duration$jobs$character"""
 
 right_format = ""
 
@@ -80,11 +80,6 @@ format = '[$symbol($version)]($style) '
 symbol = " "
 style = "cyan"
 
-[java]
-format = '[$symbol($version)]($style) '
-symbol = " "
-style = "red"
-
 # --- Infrastructure ----------------------------------------------------------
 [docker_context]
 format = '[$symbol$context]($style) '
@@ -96,14 +91,6 @@ style = "blue"
 format = '[$symbol$profile(\($region\))]($style) '
 symbol = " "
 style = "yellow"
-
-[kubernetes]
-format = '[$symbol$context(\($namespace\))]($style) '
-symbol = "󱃾 "
-disabled = false
-style = "cyan"
-detect_files = ["k8s"]
-detect_folders = ["k8s", ".kube"]
 
 [terraform]
 format = '[$symbol$workspace]($style) '
