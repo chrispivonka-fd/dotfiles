@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# Resolves 1Password's SSH-signing helper across macOS and Linux so
-# git/.gitconfig's gpg.ssh.program can reference a stable, portable name
-# instead of a platform-specific absolute path.
+# Resolves 1Password's macOS SSH-signing helper so git/.gitconfig can use a
+# stable command name instead of an application-bundle path.
 set -euo pipefail
 
 candidates=(
-    "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"  # macOS
-    "/opt/1Password/op-ssh-sign"                               # Linux (deb/rpm package)
-    "/usr/lib/1password/op-ssh-sign"                            # Linux (some distros)
+    "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
 )
 
 for path in "${candidates[@]}"; do

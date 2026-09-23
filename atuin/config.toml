@@ -1,0 +1,8 @@
+# Atuin is intentionally local-only in the public work configuration.
+auto_sync = false
+update_check = false
+
+search_mode = "fuzzy"
+filter_mode = "global"
+style = "compact"
+show_preview = true

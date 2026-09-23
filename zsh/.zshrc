@@ -11,7 +11,6 @@ fi
 export DOTFILES_DIR
 
 # --- Early essentials --------------------------------------------------------
-export GPG_TTY=$(tty)
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -29,6 +28,11 @@ if [ -f /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [ -f /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# Homebrew's versioned PostgreSQL formula is keg-only.
+if [ -d "${HOMEBREW_PREFIX}/opt/postgresql@18/bin" ]; then
+    export PATH="${HOMEBREW_PREFIX}/opt/postgresql@18/bin:$PATH"
 fi
 
 # --- History -----------------------------------------------------------------
@@ -136,7 +140,7 @@ if command -v fzf &>/dev/null; then
         export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
     fi
 
-    # Source fzf keybindings — path differs by OS
+    # Source Homebrew's fzf keybindings.
     # Only when attached to a real TTY: fzf's scripts snapshot/restore all
     # shell options (including the internal `zle` option), which zsh refuses
     # to set explicitly outside a real terminal and prints a harmless but
@@ -145,9 +149,6 @@ if command -v fzf &>/dev/null; then
         if [ -f "${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh" ]; then
             source "${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh"
             source "${HOMEBREW_PREFIX}/opt/fzf/shell/completion.zsh"
-        elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
-            source /usr/share/doc/fzf/examples/key-bindings.zsh
-            source /usr/share/doc/fzf/examples/completion.zsh
         fi
     fi
 fi
@@ -172,16 +173,6 @@ command -v mise &>/dev/null && eval "$(mise activate zsh)"
 # --- Direnv (Project environment variables) ----------------------------------
 command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
 
-# --- Yazi (Terminal File Manager) -------------------------------------------
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-	yazi "$@" --cwd-file="$tmp"
-	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-		builtin cd -- "$cwd"
-	fi
-	rm -f -- "$tmp"
-}
-
 # --- Ripgrep config ----------------------------------------------------------
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
@@ -193,12 +184,3 @@ command -v starship &>/dev/null && eval "$(starship init zsh)"
 
 # --- Local overrides (not tracked in git) ------------------------------------
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
-
-# Added by Antigravity
-export PATH="/Users/chris/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity IDE
-export PATH="/Users/chris/.antigravity-ide/antigravity-ide/bin:$PATH"
-
-# Added by OrbStack: command-line tools and integration
-source ~/.orbstack/shell/init.zsh 2>/dev/null || :

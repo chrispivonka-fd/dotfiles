@@ -1,0 +1,11 @@
+# Machine-local Git identity. Installed as ~/.gitconfig.local when absent.
+
+[user]
+    name = Your Name
+    email = you@example.com
+    # Use the public key associated with the signing key stored in 1Password.
+    # signingkey = ssh-ed25519 PUBLIC_KEY_MATERIAL
+
+# Enable this after setting user.signingkey above.
+# [commit]
+#     gpgsign = true

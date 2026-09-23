@@ -1,0 +1,7 @@
+# Machine-local SSH configuration. Installed as ~/.ssh/config.local when absent.
+# Never commit the completed local copy.
+
+# Host example-work-host
+#     HostName host.example.com
+#     User your-user
+#     IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"

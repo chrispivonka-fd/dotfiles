@@ -1,0 +1,3 @@
+# Machine-local tmux overrides. Installed as ~/.tmux.conf.local when absent.
+
+# set -g default-command "cd $HOME/path/to/workspace && exec $SHELL"

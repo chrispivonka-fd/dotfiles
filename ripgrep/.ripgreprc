@@ -5,9 +5,6 @@
 # Smart case (case-insensitive unless uppercase is used)
 --smart-case
 
-# Follow symlinks
---follow
-
 # Search hidden files (still respects .gitignore)
 --hidden
 
