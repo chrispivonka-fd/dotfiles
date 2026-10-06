@@ -1,12 +1,18 @@
 #!/bin/bash
-# PreToolUse hook: blocks destructive git commands before they execute.
+# PreToolUse hook: blocks or escalates directly spelled risky Git commands.
 #
 # Adapted from mattpocock/skills' git-guardrails-claude-code skill (MIT),
 # https://github.com/mattpocock/skills/tree/main/skills/misc/git-guardrails-claude-code
 #
-# This is a mechanical backstop for the optional automode profile's git-safety
-# rules in settings-automode.json. Permission prompts remain the primary
-# boundary; this hook is a hard block if a dangerous command reaches the tool.
+# This is a mechanical backstop for the optional automode profile. It returns a
+# structured `deny` for operations that should never run unattended and `ask`
+# for recoverable but consequential operations that need a human checkpoint.
+# Tracked zsh aliases are covered alongside their canonical spellings.
+#
+# This inspects command text, not shell semantics. Indirection, user-defined Git
+# aliases, and commands hidden inside another program remain the responsibility
+# of Auto mode's classifier, the sandbox, recoverable Git state, and remote
+# branch protections.
 #
 # Hardening over the upstream script: quoted data for a tightly limited set of
 # non-executing text commands and ordinary commit-message values are ignored,
@@ -18,6 +24,23 @@ if ! command -v jq >/dev/null 2>&1; then
   echo "BLOCKED: jq is required to inspect Bash commands safely." >&2
   exit 2
 fi
+
+return_decision() {
+  local decision="$1"
+  local reason="$2"
+
+  jq -nc \
+    --arg decision "$decision" \
+    --arg reason "$reason" \
+    '{
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: $decision,
+        permissionDecisionReason: $reason
+      }
+    }'
+  exit 0
+}
 
 INPUT=$(cat)
 if ! COMMAND=$(printf '%s' "$INPUT" | jq -er '.tool_input.command // ""'); then
@@ -120,6 +143,22 @@ if [[ "$STRUCTURE_COMMAND" =~ ^[[:space:]]*(command[[:space:]]+)?(grep|echo|prin
   exit 0
 fi
 
+# A single read-only Git inspection command also treats later Git spellings as
+# search or display data. Shell composition and substitutions deliberately do
+# not qualify, so `git grep value; git reset --hard` is still inspected below.
+# shellcheck disable=SC2016 # Match the literal command-substitution opener.
+if [[ "$STRUCTURE_COMMAND" =~ ^[[:space:]]*(command[[:space:]]+)?(git|g)[[:space:]]+(grep|log|show|diff|status)([[:space:]]|$) ]] \
+  && [[ "$STRUCTURE_COMMAND" != *';'* ]] \
+  && [[ "$STRUCTURE_COMMAND" != *'&'* ]] \
+  && [[ "$STRUCTURE_COMMAND" != *'|'* ]] \
+  && [[ "$STRUCTURE_COMMAND" != *$'\n'* ]] \
+  && [[ "$CHECK_COMMAND" != *'$('* ]] \
+  && [[ "$CHECK_COMMAND" != *'`'* ]] \
+  && [[ "$CHECK_COMMAND" != *'<('* ]] \
+  && [[ "$CHECK_COMMAND" != *'>('* ]]; then
+  exit 0
+fi
+
 # A commit message may legitimately document a blocked flag. Remove only the
 # quoted value attached to -m/--message; a quoted flag supplied directly to Git
 # remains present and is still blocked below. Never discard a value containing
@@ -136,7 +175,10 @@ if [[ "$CHECK_COMMAND" != *'$('* ]] \
       -e "s/([[:space:]]-m)\"[^\"]*\"/\1\"\"/g" \
       -e "s/([[:space:]]-m)'[^']*'/\1''/g" \
       -e "s/([[:space:]]--message(=|[[:space:]]+))\"[^\"]*\"/\1\"\"/g" \
-      -e "s/([[:space:]]--message(=|[[:space:]]+))'[^']*'/\1''/g"
+      -e "s/([[:space:]]--message(=|[[:space:]]+))'[^']*'/\1''/g" \
+      -e "s/(^|[;&|][[:space:]]*)(gcm[[:space:]]+)\"[^\"]*\"/\1\2\"\"/g" \
+      -e "s/(^|[;&|][[:space:]]*)(gcm[[:space:]]+)'[^']*'/\1\2''/g" \
+      -e "s/(^|[;&|][[:space:]]*)(gcm[[:space:]]+)[^[:space:];&|]+/\1\2_/g"
   )
 fi
 CHECK_COMMAND=${CHECK_COMMAND//\"/}
@@ -145,26 +187,108 @@ CHECK_COMMAND=${CHECK_COMMAND//\'/}
 # the backslash, so normalize them before matching known destructive spellings.
 CHECK_COMMAND=${CHECK_COMMAND//\\/}
 
-DANGEROUS_PATTERNS=(
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]reset[^;&|]*--hard"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]clean[^;&|]*(--force|[[:space:]]-[[:alnum:]]*f[[:alnum:]]*)"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]branch[^;&|]*([[:space:]]-[[:alnum:]]*d[[:alnum:]]*|--delete)"
-  # A bare checkout target can be either a ref or a path. The automode profile
-  # prompts for all `git checkout` commands; this hard block covers only the
-  # path forms that are unambiguous without executing Git's ref resolution.
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]checkout[^;&|]*([[:space:]]--[[:space:]]+|[[:space:]]+(\.|\.\.)([[:space:];&|]|$))"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]restore([[:space:];&|]|$)"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]stash[^;&|]*[[:space:]](drop|clear)([[:space:];&|]|$)"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]push[^;&|]*(--force|--delete|--mirror|--prune|[[:space:]]-[[:alnum:]]*[fd][[:alnum:]]*|[[:space:]][+:][^[:space:];&|]+)"
-  "(^|[^[:alnum:]_.-])(git|g)[^;&|]*[[:space:]]commit[^;&|]*[[:space:]]-[[:alnum:]]*n[[:alnum:]]*"
-  "\-\-no-veri[^[:space:];&|]*"
-  "\-\-no-gpg[^[:space:];&|]*"
+# Git config keys are case-insensitive. Check the small set of security-control
+# overrides against a lowercase copy without making -d and -D equivalent in the
+# command patterns below.
+LOWER_COMMAND=$(printf '%s' "$CHECK_COMMAND" | tr '[:upper:]' '[:lower:]')
+GIT_COMMAND_PREFIX='(^|[^[:alnum:]_.-])(git|g)[[:space:]]([^;&|]*[[:space:]])?'
+BRANCH_ALIAS_PREFIX='(^|[^[:alnum:]_.-])(gb|gba|gbd)[[:space:]]([^;&|]*[[:space:]])?'
+PUSH_ALIAS_PREFIX='(^|[^[:alnum:]_.-])(gp|gpo)[[:space:]]([^;&|]*[[:space:]])?'
+COMMIT_ALIAS_PREFIX='(^|[^[:alnum:]_.-])(gcm|gca|gcan)[[:space:]]([^;&|]*[[:space:]])?'
+REWRITE_ALIAS_PREFIX='(^|[^[:alnum:]_.-])(grb|grbi|gcp)[[:space:]]([^;&|]*[[:space:]])?'
+
+CORE_HOOKS_OVERRIDE_PATTERN="${GIT_COMMAND_PREFIX}-c[[:space:]]*core\\.hookspath[[:space:]]*="
+SIGNING_OVERRIDE_PATTERN="${GIT_COMMAND_PREFIX}-c[[:space:]]*(commit|tag)\\.gpgsign[[:space:]]*=[[:space:]]*(false|no|off|0)([[:space:];&|]|$)"
+CONFIG_ENV_OVERRIDE_PATTERN="${GIT_COMMAND_PREFIX}--config-env([[:space:]]+|[[:space:]]*=[[:space:]]*)(core\\.hookspath|(commit|tag)\\.gpgsign)[[:space:]]*="
+
+if [[ "$LOWER_COMMAND" =~ $CORE_HOOKS_OVERRIDE_PATTERN ]]; then
+  return_decision \
+    "deny" \
+    "Blocked by the dotfiles Git guard: overriding core.hooksPath bypasses the configured repository safeguards."
+fi
+if [[ "$LOWER_COMMAND" =~ $SIGNING_OVERRIDE_PATTERN ]]; then
+  return_decision \
+    "deny" \
+    "Blocked by the dotfiles Git guard: this command disables the configured signing policy."
+fi
+if [[ "$LOWER_COMMAND" =~ $CONFIG_ENV_OVERRIDE_PATTERN ]]; then
+  return_decision \
+    "deny" \
+    "Blocked by the dotfiles Git guard: an indirect environment override could bypass hooks or signing safeguards."
+fi
+
+HARD_BLOCK_PATTERNS=(
+  "${GIT_COMMAND_PREFIX}reset[^;&|]*[[:space:]]--hard([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}undo[^;&|]*[[:space:]]--hard([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}clean[^;&|]*[[:space:]](--force|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gclean([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}branch[^;&|]*[[:space:]]-[[:alnum:]]*D[[:alnum:]]*([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}branch[^;&|]*[[:space:]](--force|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}br[^;&|]*[[:space:]]-[[:alnum:]]*D[[:alnum:]]*([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}br[^;&|]*[[:space:]](--force|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "${BRANCH_ALIAS_PREFIX}-[[:alnum:]]*D[[:alnum:]]*([[:space:];&|]|$)"
+  "${BRANCH_ALIAS_PREFIX}(--force|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]]--force(=(true|1))?([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]]-[[:alnum:]]*f[[:alnum:]]*([[:space:];&|]|$)"
+  "${PUSH_ALIAS_PREFIX}--force(=(true|1))?([[:space:];&|]|$)"
+  "${PUSH_ALIAS_PREFIX}-[[:alnum:]]*f[[:alnum:]]*([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gpf[[:space:]]([^;&|]*[[:space:]])?(--force(=(true|1))?|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]]--mirror([[:space:];&|]|$)"
+  "${PUSH_ALIAS_PREFIX}--mirror([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gpf[[:space:]]([^;&|]*[[:space:]])?--mirror([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]][+][^[:space:];&|]+"
+  "${PUSH_ALIAS_PREFIX}[+][^[:space:];&|]+"
+  "(^|[^[:alnum:]_.-])gpf[[:space:]]([^;&|]*[[:space:]])?[+][^[:space:];&|]+"
+  "${GIT_COMMAND_PREFIX}(commit|ci|amend)[^;&|]*[[:space:]](--no-veri[^[:space:];&|]*|--no-g[^[:space:];&|]*|--no-si[^[:space:];&|]*|--no-pos[^[:space:];&|]*|-[[:alnum:]]*n[[:alnum:]]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}am[^;&|]*[[:space:]]-[[:alnum:]]*n[[:alnum:]]*([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}(tag|merge|rebase|am|cherry-pick|revert)[^;&|]*[[:space:]](--no-g[^[:space:];&|]*|--no-si[^[:space:];&|]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}(push|merge|rebase|am|cherry-pick|revert)[^;&|]*[[:space:]]--no-veri[^[:space:];&|]*"
+  "${COMMIT_ALIAS_PREFIX}(--no-veri[^[:space:];&|]*|--no-g[^[:space:];&|]*|--no-si[^[:space:];&|]*|--no-pos[^[:space:];&|]*|-[[:alnum:]]*n[[:alnum:]]*)([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])(gp|gpf|gpo)[[:space:]]([^;&|]*[[:space:]])?--no-veri[^[:space:];&|]*"
+  "${REWRITE_ALIAS_PREFIX}(--no-veri[^[:space:];&|]*|--no-g[^[:space:];&|]*|--no-si[^[:space:];&|]*)([[:space:];&|]|$)"
 )
 
-for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if printf '%s\n' "$CHECK_COMMAND" | grep -qiE "$pattern"; then
-    echo "BLOCKED: command matches dangerous pattern '$pattern'. The user has not authorized this destructive git operation in this session. Ask the user to run it themselves if it's genuinely needed." >&2
-    exit 2
+PROMPT_PATTERNS=(
+  "${GIT_COMMAND_PREFIX}reset([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}clean([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}branch[^;&|]*[[:space:]](-[[:alnum:]]*d[[:alnum:]]*|--delete)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}br[^;&|]*[[:space:]](-[[:alnum:]]*d[[:alnum:]]*|--delete)([[:space:];&|]|$)"
+  "${BRANCH_ALIAS_PREFIX}-[[:alnum:]]*d[[:alnum:]]*([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gbd([[:space:];&|]|$)"
+  # A bare checkout target can be a ref or a path. Escalate every checkout;
+  # `git switch` remains the unambiguous, no-prompt branch-switching command.
+  "${GIT_COMMAND_PREFIX}(checkout|co)([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gco([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}discard([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}restore([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}unstage([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}stash[^;&|]*[[:space:]](drop|clear)([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gst([[:space:]][^;&|]*)?[[:space:]](drop|clear)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]](--force-with-lease|--delete|--prune|-[[:alnum:]]*d[[:alnum:]]*)([=[:space:];&|]|$)"
+  "${PUSH_ALIAS_PREFIX}(--force-with-lease|--delete|--prune|-[[:alnum:]]*d[[:alnum:]]*)([=[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])gpf([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}push[^;&|]*[[:space:]]:[^[:space:];&|]+"
+  "${PUSH_ALIAS_PREFIX}:[^[:space:];&|]+"
+  "${GIT_COMMAND_PREFIX}switch[^;&|]*[[:space:]](--discard-changes|--force|-[[:alnum:]]*f[[:alnum:]]*)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}tag[^;&|]*[[:space:]](-d|--delete)([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}update-ref[^;&|]*[[:space:]]-d([[:space:];&|]|$)"
+  "${GIT_COMMAND_PREFIX}(cleanup|undo|amend)([[:space:];&|]|$)"
+  "(^|[^[:alnum:]_.-])(gca|gcan)([[:space:];&|]|$)"
+)
+
+for pattern in "${HARD_BLOCK_PATTERNS[@]}"; do
+  if [[ "$CHECK_COMMAND" =~ $pattern ]]; then
+    return_decision \
+      "deny" \
+      "Blocked by the dotfiles Git guard: this spelling performs an unbounded or safety-bypassing Git operation. Use a safer, reviewable alternative."
+  fi
+done
+
+for pattern in "${PROMPT_PATTERNS[@]}"; do
+  if [[ "$CHECK_COMMAND" =~ $pattern ]]; then
+    return_decision \
+      "ask" \
+      "The dotfiles Git guard requires confirmation because this command can discard local work, delete Git state, or rewrite remote history."
   fi
 done
 

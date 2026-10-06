@@ -107,8 +107,7 @@ claude-internal        # Jira + internal service MCPs
 claude-design          # Jira + Figma
 claude-browser         # Jira + Playwright
 claude-github          # Jira + GitHub
-claude-vercel          # Jira + the installed Vercel plugin/MCP
-claude-all             # Every registered MCP server + Vercel
+claude-all             # All servers in the curated MCP profiles
 claude-raw             # Bypass isolation; useful for `claude mcp ...` admin
 ```
 

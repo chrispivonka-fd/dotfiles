@@ -12,9 +12,7 @@ fi
 registry="$HOME/.claude.json"
 profile_dir="${XDG_CACHE_HOME:-$HOME/.cache}/claude/mcp-profiles"
 profile_file="$profile_dir/${profile}.json"
-plugin_registry="$HOME/.claude/plugins/installed_plugins.json"
 temp_file=""
-enable_vercel=0
 servers=()
 
 fail() {
@@ -56,10 +54,6 @@ case "$profile" in
   github)
     servers=(atlassian github)
     ;;
-  vercel)
-    servers=(atlassian)
-    enable_vercel=1
-    ;;
   all)
     servers=(
       atlassian aws-api aws-cloudwatch aws-cost-explorer aws-dynamodb
@@ -67,11 +61,10 @@ case "$profile" in
       fandangoMediaCatalog figma github keystone mongodb opensearch-prd
       playwright
     )
-    enable_vercel=1
     ;;
   *)
     fail "Unknown Claude MCP profile: $profile
-Profiles: jira, aws, data, observe, internal, design, browser, github, vercel, all" 2
+Profiles: jira, aws, data, observe, internal, design, browser, github, all" 2
     ;;
 esac
 
@@ -93,39 +86,15 @@ missing=$(command jq -r --argjson names "$names_json" '
 ' "$registry") || exit
 [ -z "$missing" ] || fail "Claude MCP profile '$profile' is missing configured servers: $missing"
 
-vercel_mcp_file=""
-if [ "$enable_vercel" -eq 1 ]; then
-  [ -r "$plugin_registry" ] || fail "Claude plugin registry is not readable: $plugin_registry"
-  vercel_install_path=$(command jq -er '
-    .plugins["vercel@claude-plugins-official"]
-    | map(select(.scope == "user" and .installPath != null))
-    | last.installPath
-  ' "$plugin_registry") || fail "The installed Vercel Claude plugin could not be located."
-  [[ "$vercel_install_path" == "$HOME/.claude/plugins/"* ]] ||
-    fail "Refusing unexpected Vercel plugin path: $vercel_install_path"
-  vercel_mcp_file="$vercel_install_path/.mcp.json"
-  command jq -e '.mcpServers.vercel | type == "object"' \
-    "$vercel_mcp_file" >/dev/null 2>&1 ||
-    fail "The installed Vercel plugin has no valid MCP definition."
-fi
-
 temp_file=$(command mktemp "$profile_dir/.${profile}.XXXXXX") || exit
 trap cleanup EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
-if [ "$enable_vercel" -eq 1 ]; then
-  command jq --argjson names "$names_json" --slurpfile plugin "$vercel_mcp_file" '
-    (.mcpServers // {}) as $configured
-    | (reduce $names[] as $name ({}; .[$name] = $configured[$name])) as $selected
-    | {mcpServers: ($selected + {vercel: $plugin[0].mcpServers.vercel})}
-  ' "$registry" > "$temp_file" || exit
-else
-  command jq --argjson names "$names_json" '
-    (.mcpServers // {}) as $configured
-    | {mcpServers: (reduce $names[] as $name ({}; .[$name] = $configured[$name]))}
-  ' "$registry" > "$temp_file" || exit
-fi
+command jq --argjson names "$names_json" '
+  (.mcpServers // {}) as $configured
+  | {mcpServers: (reduce $names[] as $name ({}; .[$name] = $configured[$name]))}
+' "$registry" > "$temp_file" || exit
 command chmod 600 "$temp_file" || exit
 [ ! -L "$profile_file" ] || fail "Refusing symlinked Claude MCP profile: $profile_file"
 command mv -f -- "$temp_file" "$profile_file" || exit

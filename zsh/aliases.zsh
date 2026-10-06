@@ -280,7 +280,6 @@ if command -v claude &>/dev/null; then
   alias claude-design='claude-mcp design'
   alias claude-browser='claude-mcp browser'
   alias claude-github='claude-mcp github'
-  alias claude-vercel='claude-mcp vercel'
   alias claude-all='claude-mcp all'
   alias claude-raw='command claude'
 fi

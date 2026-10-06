@@ -1,5 +1,5 @@
 #!/bin/bash
-# PostToolUse hook: scans a file for secrets after Claude's write/edit tools.
+# PostToolUse hook: scans a file for secrets after Claude's file-edit tools.
 #
 # Non-blocking (exit 0 always) — surfaces findings via additionalContext so
 # the model sees them and can course-correct immediately. Shell commands can
@@ -15,7 +15,9 @@
 # already has a stronger, actively-maintained rule set.
 
 INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+FILE_PATH=$(printf '%s' "$INPUT" | jq -r \
+  '(.tool_input.file_path // .tool_input.notebook_path // empty) | strings' \
+  2>/dev/null)
 
 if [ -z "$FILE_PATH" ] || [ ! -f "$FILE_PATH" ]; then
   exit 0
