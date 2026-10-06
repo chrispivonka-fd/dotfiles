@@ -237,8 +237,10 @@ create_symlinks() {
   link_file "$DOTFILES_DIR/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
   link_file "$DOTFILES_DIR/claude/hooks" "$HOME/.claude/hooks"
   link_file "$DOTFILES_DIR/claude/agents" "$HOME/.claude/agents"
+  link_file "$DOTFILES_DIR/claude/skills" "$HOME/.claude/skills"
   setup_vscode_settings
   link_file "$DOTFILES_DIR/bin/tmux-sessionizer" "$HOME/.local/bin/tmux-sessionizer"
+  link_file "$DOTFILES_DIR/bin/claude-mcp" "$HOME/.local/bin/claude-mcp"
   link_file "$DOTFILES_DIR/bin/op-ssh-sign" "$HOME/.local/bin/op-ssh-sign"
 
   if [ -f "$DOTFILES_DIR/mise/mise.lock" ]; then

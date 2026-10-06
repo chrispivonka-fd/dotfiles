@@ -79,6 +79,7 @@ git init -q -b main "$REPO_DIR"
 cd "$REPO_DIR"
 git config user.name "Hook Tests"
 git config user.email "hooks@example.com"
+git config commit.gpgsign false
 printf 'baseline\n' > baseline.txt
 git add baseline.txt
 git -c core.hooksPath=/dev/null commit -q -m "chore: initialize hook tests"

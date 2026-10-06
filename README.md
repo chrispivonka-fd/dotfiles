@@ -81,11 +81,61 @@ not render or track `~/.aws/config` or `~/.aws/credentials`.
 
 The default Claude profile remains `~/.claude/settings.json`. The previous
 automode profile is retained at `~/.claude/settings-automode.json`, together
-with its status line and safety hooks. Use it for an individual session with:
+with its safety hooks. Both profiles share a responsive two-line status bar
+showing project and Git state, review context, model/mode, live context tokens
+with a red warning at 100k, usage windows, cache health, and estimated session
+usage. Use automode for an individual session with:
 
 ```sh
 claude --settings "$HOME/.claude/settings-automode.json"
 ```
+
+Interactive zsh sessions isolate Claude's MCP servers by default. Plain
+`claude` uses only the configured `atlassian` server (Jira); it ignores every
+other user- and project-level MCP definition for that session. The private
+`~/.claude.json` registry remains the source of truth, and each selected
+profile is regenerated in a private, mode-0600 cache. That stable path also
+keeps background and resumed sessions working without putting configuration in
+this repository or in process arguments.
+
+```sh
+claude                 # Jira only
+claude-aws             # Jira + AWS APIs
+claude-data            # Jira + MongoDB + OpenSearch
+claude-observe         # Jira + Datadog + AWS logs/costs
+claude-internal        # Jira + internal service MCPs
+claude-design          # Jira + Figma
+claude-browser         # Jira + Playwright
+claude-github          # Jira + GitHub
+claude-vercel          # Jira + the installed Vercel plugin/MCP
+claude-all             # Every registered MCP server + Vercel
+claude-raw             # Bypass isolation; useful for `claude mcp ...` admin
+```
+
+These launchers apply when Claude is started from zsh (including Warp). Other
+launch paths that do not source this shell configuration continue to use their
+own MCP configuration. Use `/mcp` inside a Claude session to see its active
+servers; `claude mcp list` is a registry-management command and still lists all
+stored definitions.
+
+The Homebrew manifest intentionally uses `claude-code@latest`; the stable cask
+can lag the client support required by newly exposed Bedrock model versions.
+
+Curated global Claude skills live under `claude/skills/` and are linked into
+`~/.claude/skills`. The software-delivery path is `/grill-with-docs` ->
+`/to-spec` -> `/to-tickets` -> `/implement` for one issue or `/implement-spec`
+for the automatic ticket loop. It designs deep-module interfaces before
+delegating implementations, uses `/tdd`, and finishes with an evidence-backed
+`/definition-of-done` plus `/code-review`. `/grill-me` remains available for a
+lighter interview without domain-doc updates. Run `/setup-matt-pocock-skills`
+once in each project so the flow knows the issue tracker and domain-doc layout.
+The workflow pins `anthropic.claude-opus-5-5[1m]` for grilling, specification,
+and final review, and `anthropic.claude-sonnet-5[1m]` for ticket generation,
+TDD, and implementation agents. Skill overrides apply to their active turn, so
+interactive approvals stay in-turn; delegated workers receive an explicit
+model on every dispatch. If a skill has to end a turn before it is finished,
+re-invoke it with the answer or switch the session model. `/tasks` shows the
+model used by each running agent.
 
 ## Tool ownership
 
@@ -133,7 +183,9 @@ a normal install is repeatable. Refreshing that lockfile is the deliberate
 upgrade step. Project `mise.toml` files should be committed to their own
 repositories. Idiomatic files such as `.nvmrc`, `.python-version`, and
 `.terraform-version` are also honored when present. The global policy waits
-seven days before adopting newly released versions.
+seven days before adopting newly released versions. The global .NET fallback
+tracks major 11 and permits prereleases until that release line reaches general
+availability; other tools continue to prefer stable releases.
 
 ## Containers and databases
 

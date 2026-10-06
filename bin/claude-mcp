@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# Launch Claude Code with an exact, opt-in MCP profile.
+
+set -o pipefail
+umask 077
+
+profile="${1:-jira}"
+if [ "$#" -gt 0 ]; then
+  shift
+fi
+
+registry="$HOME/.claude.json"
+profile_dir="${XDG_CACHE_HOME:-$HOME/.cache}/claude/mcp-profiles"
+profile_file="$profile_dir/${profile}.json"
+plugin_registry="$HOME/.claude/plugins/installed_plugins.json"
+temp_file=""
+enable_vercel=0
+servers=()
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit "${2:-1}"
+}
+
+cleanup() {
+  if [ -n "$temp_file" ]; then
+    command rm -f -- "$temp_file"
+  fi
+}
+
+case "$profile" in
+  jira)
+    servers=(atlassian)
+    ;;
+  aws)
+    servers=(
+      atlassian aws-api aws-cloudwatch aws-cost-explorer aws-dynamodb
+      aws-iam aws-lambda-tool aws-serverless
+    )
+    ;;
+  data)
+    servers=(atlassian mongodb opensearch-prd)
+    ;;
+  observe)
+    servers=(atlassian datadog aws-cloudwatch aws-cost-explorer)
+    ;;
+  internal)
+    servers=(atlassian fandango fandangoMediaCatalog keystone)
+    ;;
+  design)
+    servers=(atlassian figma)
+    ;;
+  browser)
+    servers=(atlassian playwright)
+    ;;
+  github)
+    servers=(atlassian github)
+    ;;
+  vercel)
+    servers=(atlassian)
+    enable_vercel=1
+    ;;
+  all)
+    servers=(
+      atlassian aws-api aws-cloudwatch aws-cost-explorer aws-dynamodb
+      aws-iam aws-lambda-tool aws-serverless datadog fandango
+      fandangoMediaCatalog figma github keystone mongodb opensearch-prd
+      playwright
+    )
+    enable_vercel=1
+    ;;
+  *)
+    fail "Unknown Claude MCP profile: $profile
+Profiles: jira, aws, data, observe, internal, design, browser, github, vercel, all" 2
+    ;;
+esac
+
+command -v claude >/dev/null 2>&1 || fail "Claude Code is not installed." 127
+command -v jq >/dev/null 2>&1 || fail "Claude MCP profiles require jq." 127
+[ -r "$registry" ] || fail "Claude MCP registry is not readable: $registry"
+[[ "$profile_dir" == /* ]] || fail "Claude MCP profile directory must be absolute: $profile_dir"
+[ ! -L "$profile_dir" ] || fail "Refusing symlinked Claude MCP profile directory: $profile_dir"
+
+command mkdir -p "$profile_dir" || exit
+command chmod 700 "$profile_dir" || exit
+
+names_json=$(printf '%s\n' "${servers[@]}" |
+  command jq -Rsc 'split("\n") | map(select(length > 0))') || exit
+missing=$(command jq -r --argjson names "$names_json" '
+  (.mcpServers // {}) as $configured
+  | [$names[] | select($configured[.] == null)]
+  | join(", ")
+' "$registry") || exit
+[ -z "$missing" ] || fail "Claude MCP profile '$profile' is missing configured servers: $missing"
+
+vercel_mcp_file=""
+if [ "$enable_vercel" -eq 1 ]; then
+  [ -r "$plugin_registry" ] || fail "Claude plugin registry is not readable: $plugin_registry"
+  vercel_install_path=$(command jq -er '
+    .plugins["vercel@claude-plugins-official"]
+    | map(select(.scope == "user" and .installPath != null))
+    | last.installPath
+  ' "$plugin_registry") || fail "The installed Vercel Claude plugin could not be located."
+  [[ "$vercel_install_path" == "$HOME/.claude/plugins/"* ]] ||
+    fail "Refusing unexpected Vercel plugin path: $vercel_install_path"
+  vercel_mcp_file="$vercel_install_path/.mcp.json"
+  command jq -e '.mcpServers.vercel | type == "object"' \
+    "$vercel_mcp_file" >/dev/null 2>&1 ||
+    fail "The installed Vercel plugin has no valid MCP definition."
+fi
+
+temp_file=$(command mktemp "$profile_dir/.${profile}.XXXXXX") || exit
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+if [ "$enable_vercel" -eq 1 ]; then
+  command jq --argjson names "$names_json" --slurpfile plugin "$vercel_mcp_file" '
+    (.mcpServers // {}) as $configured
+    | (reduce $names[] as $name ({}; .[$name] = $configured[$name])) as $selected
+    | {mcpServers: ($selected + {vercel: $plugin[0].mcpServers.vercel})}
+  ' "$registry" > "$temp_file" || exit
+else
+  command jq --argjson names "$names_json" '
+    (.mcpServers // {}) as $configured
+    | {mcpServers: (reduce $names[] as $name ({}; .[$name] = $configured[$name]))}
+  ' "$registry" > "$temp_file" || exit
+fi
+command chmod 600 "$temp_file" || exit
+[ ! -L "$profile_file" ] || fail "Refusing symlinked Claude MCP profile: $profile_file"
+command mv -f -- "$temp_file" "$profile_file" || exit
+temp_file=""
+
+# The equals form is intentional: --mcp-config is variadic, so a separate
+# argument could consume the user's prompt or subcommand as another config.
+exec claude --strict-mcp-config --mcp-config="$profile_file" "$@"

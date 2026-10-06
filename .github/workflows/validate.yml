@@ -45,6 +45,7 @@ jobs:
             install.sh \
             bin/op-ssh-sign \
             bin/tmux-sessionizer \
+            bin/claude-mcp \
             claude/statusline-command.sh \
             claude/hooks/block-dangerous-git.sh \
             claude/hooks/scan-written-file.sh \
@@ -53,6 +54,7 @@ jobs:
             git/hooks/pre-commit \
             git/hooks/pre-push \
             git/hooks/lib/common.sh \
+            scripts/test-claude-statusline.sh \
             scripts/test-git-hooks.sh
           zsh -n zsh/.zshrc
           zsh -n zsh/1password.zsh
@@ -62,6 +64,7 @@ jobs:
             install.sh \
             bin/op-ssh-sign \
             bin/tmux-sessionizer \
+            bin/claude-mcp \
             claude/statusline-command.sh \
             claude/hooks/block-dangerous-git.sh \
             claude/hooks/scan-written-file.sh \
@@ -70,6 +73,7 @@ jobs:
             git/hooks/pre-commit \
             git/hooks/pre-push \
             git/hooks/lib/common.sh \
+            scripts/test-claude-statusline.sh \
             scripts/test-git-hooks.sh
 
       - name: Validate configuration files
@@ -135,6 +139,9 @@ jobs:
           assert_blocked 'git stash clear'
           assert_blocked 'git push --force'
           assert_blocked 'git commit --no-verify'
+
+      - name: Test Claude status line
+        run: ./scripts/test-claude-statusline.sh
 
       - name: Test Git hooks
         run: ./scripts/test-git-hooks.sh

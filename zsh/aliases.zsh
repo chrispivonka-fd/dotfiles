@@ -254,6 +254,37 @@ alias uuid='python3 -c "import uuid; print(uuid.uuid4())"'
 alias serve='python3 -m http.server 8000'
 alias sha256='shasum -a 256'
 
+# --- Claude Code MCP profiles -----------------------------------------------
+if command -v claude &>/dev/null; then
+  claude-mcp() {
+    local launcher
+    launcher=$(whence -p claude-mcp 2>/dev/null)
+    if [[ -z "$launcher" && -n "${DOTFILES_DIR:-}" && \
+          -x "$DOTFILES_DIR/bin/claude-mcp" ]]; then
+      launcher="$DOTFILES_DIR/bin/claude-mcp"
+    fi
+    if [[ -z "$launcher" ]]; then
+      print -u2 "Claude MCP launcher is not installed; run the dotfiles installer."
+      return 127
+    fi
+    "$launcher" "$@"
+  }
+
+  # Normal Claude sessions get Jira only. Other integrations are explicit.
+  claude() { claude-mcp jira "$@"; }
+  alias claude-jira='claude-mcp jira'
+  alias claude-aws='claude-mcp aws'
+  alias claude-data='claude-mcp data'
+  alias claude-observe='claude-mcp observe'
+  alias claude-internal='claude-mcp internal'
+  alias claude-design='claude-mcp design'
+  alias claude-browser='claude-mcp browser'
+  alias claude-github='claude-mcp github'
+  alias claude-vercel='claude-mcp vercel'
+  alias claude-all='claude-mcp all'
+  alias claude-raw='command claude'
+fi
+
 # --- Process management ------------------------------------------------------
 alias psg='ps aux | command grep -v grep | command grep'
 alias killport='kill -9 $(lsof -t -i)'  # usage: killport :3000

@@ -23,7 +23,7 @@ idiomatic_version_file_enable_tools = [
 # reproducible; projects pin any required version in their own mise.toml.
 node = "latest"
 python = "latest"
-dotnet = "latest"
+dotnet = { version = "11", prerelease = true }
 go = "latest"
 rust = { version = "latest", profile = "default" }
 terraform = "latest"
@@ -46,5 +46,5 @@ tree-sitter = "latest"
 
 # Global .NET tools retained for AWS Lambda, EF Core, and dependency updates.
 "dotnet:amazon.lambda.tools" = "latest"
-"dotnet:dotnet-ef" = "latest"
+"dotnet:dotnet-ef" = { version = "latest", prerelease = true }
 "dotnet:dotnet-outdated-tool" = "latest"

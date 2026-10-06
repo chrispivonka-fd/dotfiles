@@ -17,6 +17,7 @@ secrets.env
 *.pfx
 credentials
 hosts.yml
+nuget.config
 .aws/
 
 # Tool-generated state
