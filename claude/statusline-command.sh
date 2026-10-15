@@ -16,7 +16,6 @@ C_YELLOW=$'\033[38;5;221m'
 C_GREEN=$'\033[38;5;114m'
 C_CYAN=$'\033[38;5;80m'
 C_BLUE=$'\033[38;5;117m'
-BOLD=$'\033[1m'
 RESET=$'\033[0m'
 
 # Parse Claude's payload once. Replace control characters in all displayed data
@@ -402,11 +401,11 @@ if [ -n "$git_branch" ] && [ "$branch_limit" -gt 0 ]; then
   fi
 fi
 
-line1="${C_BLUE}${BOLD}${short_dir}${RESET}"
+line1="${C_BLUE}${short_dir}${RESET}"
 line1_width=$(string_width "$short_dir")
 if [ -n "$branch_label" ]; then
   git_plain="git:${branch_label}"
-  git_styled="${C_PURPLE}${BOLD}${git_plain}${RESET}"
+  git_styled="${C_PURPLE}${git_plain}${RESET}"
   if append_line1_segment "$git_plain" "$git_styled"; then
     [ -n "$status_plain" ] && append_line1_token "$status_plain" "$status_styled"
     [ "$ahead" -gt 0 ] && append_line1_token " up:${ahead}" " ${C_CYAN}up:${ahead}${RESET}"
@@ -426,7 +425,7 @@ if [ -n "$pr_number" ]; then
   esac
   pr_number=$(truncate_middle "$pr_number" 16)
   pr_plain="${pr_label} #${pr_number}${pr_suffix}"
-  append_line1_segment "$pr_plain" "${pr_color}${BOLD}${pr_plain}${RESET}" || true
+  append_line1_segment "$pr_plain" "${pr_color}${pr_plain}${RESET}" || true
 fi
 
 if [ -n "$worktree_name" ]; then
@@ -435,7 +434,7 @@ if [ -n "$worktree_name" ]; then
 fi
 
 if [ -n "$jira" ]; then
-  append_line1_segment "$jira" "${C_PURPLE}${BOLD}${jira}${RESET}" || true
+  append_line1_segment "$jira" "${C_PURPLE}${jira}${RESET}" || true
 fi
 
 # Line 2: model and the limits most likely to affect the current session.
@@ -458,7 +457,7 @@ model_limit=36
 [ "$columns" -lt 90 ] && model_limit=26
 [ "$model_limit" -gt "$columns" ] && model_limit="$columns"
 model_label=$(truncate_middle "$model_label" "$model_limit")
-line2="${C_BLUE}${BOLD}${model_label}${RESET}"
+line2="${C_BLUE}${model_label}${RESET}"
 line2_width=$(string_width "$model_label")
 
 if context_pct=$(round_percent "$context_used"); then

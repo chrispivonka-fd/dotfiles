@@ -233,6 +233,19 @@ prompts into `~/.claude/agents`.
 
 ## Terminal appearance
 
+Claude's custom **GitHub Midnight** theme lives in
+`claude/themes/github-midnight.json` and is linked to
+`~/.claude/themes/github-midnight.json` by the installer. Select it with
+`/theme` in Claude. It uses bright neutral text, blue and violet accents,
+subtle message panels, and distinct green/red diff highlights. The custom
+status line uses normal-weight text and has its own color palette. For the
+compact local Warp appearance, use 12-point text, normal font weight, and
+thin strokes under Appearance > Text. If Claude was already running before
+`~/.claude/themes/` existed, the first theme discovery requires a Claude restart;
+later edits reload live. Warp can stay open throughout.
+
 The GitHub Dark Terminal.app profile remains in `terminal/` as an optional
-asset. Import it manually if desired. Choose a Nerd Font manually in Warp.
-The installer never changes either terminal's defaults.
+asset. Import it manually if desired. The installer links the Warp GitHub Dark
+palette to `~/.warp/themes/github-dark.yaml`. Select GitHub Dark in Warp's
+Appearance settings and choose a Nerd Font manually. The installer never
+changes either terminal's defaults.

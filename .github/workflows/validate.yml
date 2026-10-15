@@ -96,6 +96,7 @@ jobs:
           for path in (
               Path("claude/settings.json"),
               Path("claude/settings-automode.json"),
+              Path("claude/themes/github-midnight.json"),
               Path("templates/devcontainers/base/.devcontainer/devcontainer.json"),
           ):
               with path.open(encoding="utf-8") as stream:

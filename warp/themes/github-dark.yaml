@@ -1,0 +1,27 @@
+# GitHub Dark palette restored from this machine's previous dotfiles.
+# https://docs.warp.dev/terminal/appearance/custom-themes/
+name: GitHub Dark
+accent: '#58a6ff'
+cursor: '#c9d1d9'
+background: '#101216'
+foreground: '#8b949e'
+details: darker
+terminal_colors:
+  normal:
+    black: '#000000'
+    red: '#f78166'
+    green: '#56d364'
+    yellow: '#e3b341'
+    blue: '#6ca4f8'
+    magenta: '#db61a2'
+    cyan: '#2b7489'
+    white: '#ffffff'
+  bright:
+    black: '#4d4d4d'
+    red: '#f78166'
+    green: '#56d364'
+    yellow: '#e3b341'
+    blue: '#6ca4f8'
+    magenta: '#db61a2'
+    cyan: '#2b7489'
+    white: '#ffffff'
